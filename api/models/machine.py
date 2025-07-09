@@ -1,6 +1,8 @@
+from __future__ import annotations
 from api import db
 from uuid import uuid4
 from typing import List, TYPE_CHECKING
+from sqlalchemy.orm import Mapped
 if TYPE_CHECKING:
     from api.models.user import Role
 
@@ -23,4 +25,4 @@ class Machine(db.Model):
     token = db.Column(db.String(64), unique=True, nullable=False, default=lambda: str(uuid4()).replace('-', ''))
     user_id = db.Column(db.String(36), db.ForeignKey('user.id'), nullable=False)
     user = db.relationship('User', backref=db.backref('machines', lazy=True))
-    roles: 'List[Role]' = db.relationship('Role', secondary=machine_roles, backref=db.backref('machines', lazy='dynamic')) 
+    roles: Mapped[list[Role]] = db.relationship('Role', secondary=machine_roles, backref=db.backref('machines', lazy='dynamic'))  # type: ignore 

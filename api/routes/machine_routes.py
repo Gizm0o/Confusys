@@ -148,4 +148,22 @@ def list_machine_files(current_user, machine_id):
     if not machine or not user_can_access_machine(current_user, machine):
         return jsonify({'error': 'Machine not found or access denied'}), 404
     files = [{'id': f.id, 'filename': f.filename} for f in machine.files]
-    return jsonify(files) 
+    return jsonify(files)
+
+@machine_bp.route('/machines/<machine_id>/files/<file_id>', methods=['DELETE'])
+@token_required
+def delete_machine_file(current_user, machine_id, file_id):
+    try:
+        uuid.UUID(str(machine_id))
+        uuid.UUID(str(file_id))
+    except ValueError:
+        return jsonify({'error': 'Invalid ID format'}), 400
+    machine = db.session.get(Machine, machine_id)
+    if not machine or not user_can_access_machine(current_user, machine):
+        return jsonify({'error': 'Machine not found or access denied'}), 404
+    machine_file = db.session.get(MachineFile, file_id)
+    if not machine_file or machine_file.machine_id != machine.id:
+        return jsonify({'error': 'File not found or does not belong to this machine'}), 404
+    db.session.delete(machine_file)
+    db.session.commit()
+    return jsonify({'message': 'File deleted successfully'}) 
