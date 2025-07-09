@@ -7,6 +7,35 @@ import jwt
 from functools import wraps
 from flask import current_app
 from werkzeug.utils import secure_filename
+from api.script_templates import generate_audit_script, SCRIPT_BLOCKS
+
+TECH_DESCRIPTIONS = {
+    "os_kernel": "Operating system and kernel information",
+    "memory_cpu": "Memory and CPU statistics",
+    "disk_filesystems": "Disk usage and filesystem details",
+    "processes_services": "Running processes and system services",
+    "network": "Network interfaces and connections",
+    "routing": "Network routing tables",
+    "users_auth": "User accounts and authentication configuration",
+    "history": "User login and shell history",
+    "packages": "Installed software packages",
+    "docker": "Docker container information",
+    "lxc": "LXC container information",
+    "selinux": "SELinux security status",
+    "firewall": "Firewall and packet filter rules",
+    "kernel_params": "Kernel parameters (sysctl)",
+    "kernel_vuln": "Kernel CPU vulnerability status",
+    "shared_memory": "Shared memory segments",
+    "udev": "udev rules and device events",
+    "dbus": "DBUS system information",
+    "suid_sgid": "SUID/SGID files",
+    "world_writable": "World-writable files",
+    "capabilities": "File capabilities",
+    "env_umask": "Environment variables and umask",
+    "exports": "NFS exported filesystems",
+    "rpc": "RPC services",
+    "x_access": "X server access controls"
+}
 
 def token_required(f):
     @wraps(f)
@@ -47,14 +76,18 @@ def register_machine(current_user):
     name = data.get('name')
     description = data.get('description')
     role_names = data.get('roles', [])
+    technologies = data.get('technologies', [])
     if not name:
         return jsonify({'error': 'Missing machine name'}), 400
     roles = Role.query.filter(Role.name.in_(role_names)).all() if role_names else []
-    machine = Machine(name=name, description=description, user_id=current_user.id)
-    machine.roles = list(roles)  # Ensure roles is a list
+    # Generate the custom audit script
+    script = generate_audit_script(technologies)
+    machine = Machine(name=name, description=description, user_id=current_user.id, script=script)
     db.session.add(machine)
     db.session.commit()
-    return jsonify({'id': machine.id, 'name': machine.name, 'description': machine.description, 'token': machine.token, 'roles': [r.name for r in machine.roles]}), 201
+    machine.roles = list(roles)
+    db.session.commit()
+    return jsonify({'machine_id': machine.id, 'token': machine.token, 'script': script}), 201
 
 @machine_bp.route('/machines', methods=['GET'])
 @token_required
@@ -166,4 +199,19 @@ def delete_machine_file(current_user, machine_id, file_id):
         return jsonify({'error': 'File not found or does not belong to this machine'}), 404
     db.session.delete(machine_file)
     db.session.commit()
-    return jsonify({'message': 'File deleted successfully'}) 
+    return jsonify({'message': 'File deleted successfully'})
+
+@machine_bp.route('/machines/<machine_id>/script', methods=['GET'])
+@token_required
+def get_machine_script(current_user, machine_id):
+    machine = db.session.get(Machine, machine_id)
+    if not machine or not user_can_access_machine(current_user, machine):
+        return jsonify({'error': 'Machine not found or access denied'}), 404
+    return (machine.script, 200, {'Content-Type': 'text/x-shellscript; charset=utf-8'})
+
+@machine_bp.route('/machines/technologies', methods=['GET'])
+def list_technologies():
+    return jsonify([
+        {"key": k, "description": TECH_DESCRIPTIONS.get(k, k)}
+        for k in SCRIPT_BLOCKS.keys()
+    ]) 
