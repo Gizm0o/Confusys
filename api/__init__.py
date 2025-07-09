@@ -25,6 +25,9 @@ def create_app(test_config=None):
     from api.routes.role_routes import role_bp
     app.register_blueprint(role_bp)
 
+    from api.routes.rule_routes import rule_bp
+    app.register_blueprint(rule_bp)
+
     @app.route('/')
     def index():
         return {'message': 'Confusys API is running.'}

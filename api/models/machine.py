@@ -3,6 +3,7 @@ from api import db
 from uuid import uuid4
 from typing import List, TYPE_CHECKING
 from sqlalchemy.orm import Mapped
+from datetime import datetime, timezone
 if TYPE_CHECKING:
     from api.models.user import Role
 
@@ -26,3 +27,19 @@ class Machine(db.Model):
     user_id = db.Column(db.String(36), db.ForeignKey('user.id'), nullable=False)
     user = db.relationship('User', backref=db.backref('machines', lazy=True))
     roles: Mapped[list[Role]] = db.relationship('Role', secondary=machine_roles, backref=db.backref('machines', lazy='dynamic'))  # type: ignore 
+
+# Association table for rules and roles
+rule_roles = db.Table('rule_roles',
+    db.Column('rule_id', db.String(36), db.ForeignKey('rule.id'), primary_key=True),
+    db.Column('role_id', db.Integer, db.ForeignKey('role.id'), primary_key=True)
+)
+
+class Rule(db.Model):
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()), unique=True)
+    filename = db.Column(db.String(255), nullable=False)
+    data = db.Column(db.LargeBinary, nullable=False)
+    description = db.Column(db.String(255))
+    user_id = db.Column(db.String(36), db.ForeignKey('user.id'), nullable=False)
+    user = db.relationship('User', backref=db.backref('rules', lazy=True))
+    roles: Mapped[list['Role']] = db.relationship('Role', secondary=rule_roles, backref=db.backref('rules', lazy='dynamic'))  # type: ignore
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc)) 

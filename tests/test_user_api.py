@@ -180,3 +180,67 @@ def test_machine_file_delete(client):
     # Try to delete other_file_id from original machine_id
     resp = client.delete(f'/machines/{machine_id}/files/{other_file_id}', headers={'Authorization': f'Bearer {token}'})
     assert resp.status_code == 404 
+
+def test_rule_crud_and_access(client):
+    admin_token = get_admin_token(client)
+    # Create roles
+    resp = client.post('/roles', json={'name': 'ruleop', 'description': 'Rule Operator'}, headers={'Authorization': f'Bearer {admin_token}'})
+    assert resp.status_code == 201
+    role_id = resp.get_json()['id']
+    # Register a user and assign ruleop role
+    token, user_id = get_auth_token(client, username='ruleuser', password='rulepass', email='rule@example.com')
+    client.post(f'/roles/{role_id}/assign_user/{user_id}', headers={'Authorization': f'Bearer {admin_token}'})
+    # Upload a rule as ruleuser
+    data = {
+        'file': (io.BytesIO(b'rule content'), 'rule1.txt'),
+        'description': 'Test rule',
+        'roles': 'ruleop'
+    }
+    resp = client.post('/rules', headers={'Authorization': f'Bearer {token}'}, content_type='multipart/form-data', data=data)
+    assert resp.status_code == 201
+    rule_id = resp.get_json()['id']
+    # List rules as ruleuser
+    resp = client.get('/rules', headers={'Authorization': f'Bearer {token}'})
+    assert resp.status_code == 200
+    assert any(r['id'] == rule_id for r in resp.get_json())
+    # Get rule metadata
+    resp = client.get(f'/rules/{rule_id}', headers={'Authorization': f'Bearer {token}'})
+    assert resp.status_code == 200
+    # Download rule file
+    resp = client.get(f'/rules/{rule_id}?download=1', headers={'Authorization': f'Bearer {token}'})
+    assert resp.status_code == 200
+    assert resp.data == b'rule content'
+    # Update rule (change description)
+    update_data = {
+        'description': 'Updated rule',
+        'roles': 'ruleop'
+    }
+    resp = client.put(f'/rules/{rule_id}', headers={'Authorization': f'Bearer {token}'}, content_type='multipart/form-data', data=update_data)
+    assert resp.status_code == 200
+    # Delete rule as non-owner (should fail)
+    token2, user_id2 = get_auth_token(client, username='otheruser', password='otherpass', email='other@example.com')
+    resp = client.delete(f'/rules/{rule_id}', headers={'Authorization': f'Bearer {token2}'})
+    assert resp.status_code == 403
+    # Delete rule as owner
+    resp = client.delete(f'/rules/{rule_id}', headers={'Authorization': f'Bearer {token}'})
+    assert resp.status_code == 200
+    # Rule should be gone
+    resp = client.get(f'/rules/{rule_id}', headers={'Authorization': f'Bearer {token}'})
+    assert resp.status_code == 404
+    # Upload rule as ruleuser, admin can delete
+    data = {
+        'file': (io.BytesIO(b'rule content'), 'rule2.txt'),
+        'description': 'Test rule 2',
+        'roles': 'ruleop'
+    }
+    resp = client.post('/rules', headers={'Authorization': f'Bearer {token}'}, content_type='multipart/form-data', data=data)
+    rule_id2 = resp.get_json()['id']
+    resp = client.delete(f'/rules/{rule_id2}', headers={'Authorization': f'Bearer {admin_token}'})
+    assert resp.status_code == 200
+    # Upload rule with no file
+    resp = client.post('/rules', headers={'Authorization': f'Bearer {token}'}, content_type='multipart/form-data', data={})
+    assert resp.status_code == 400
+    # Upload rule with empty filename
+    data = {'file': (io.BytesIO(b''), '')}
+    resp = client.post('/rules', headers={'Authorization': f'Bearer {token}'}, content_type='multipart/form-data', data=data)
+    assert resp.status_code == 400 
