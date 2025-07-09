@@ -91,6 +91,42 @@ curl -X DELETE http://localhost:5000/machines/<machine_id>/files/<file_id> \
 ```
 - Only users with a matching role (or admin) can upload, list, or delete files for a machine.
 
+### Rules
+- Upload: `POST /rules` (multipart/form-data, field: `file`, optional `description`, `roles`)
+- List: `GET /rules`
+- Get: `GET /rules/<rule_id>` (add `?download=1` to download the file)
+- Update: `PUT /rules/<rule_id>` (multipart/form-data, owner or admin only)
+- Delete: `DELETE /rules/<rule_id>` (owner or admin only)
+
+Rules are files uploaded by users, associated with roles for access control. Only users with a matching role (or admin, or the owner) can manage or view a rule.
+
+#### Example: Upload a rule file
+```sh
+curl -X POST http://localhost:5000/rules \
+  -H "Authorization: Bearer <user_token>" \
+  -F "file=@/path/to/yourrule.txt" \
+  -F "description=My parsing rule" \
+  -F "roles=operator" -F "roles=analyst"
+```
+
+#### Example: List rules
+```sh
+curl -X GET http://localhost:5000/rules \
+  -H "Authorization: Bearer <user_token>"
+```
+
+#### Example: Get rule metadata
+```sh
+curl -X GET http://localhost:5000/rules/<rule_id> \
+  -H "Authorization: Bearer <user_token>"
+```
+
+#### Example: Download a rule file
+```sh
+curl -X GET "http://localhost:5000/rules/<rule_id>?download=1" \
+  -H "Authorization: Bearer <user_token>"
+```
+
 ## Example Usage
 
 ### Register and Login
