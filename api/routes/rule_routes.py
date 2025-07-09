@@ -42,7 +42,7 @@ def user_can_access_rule(user, rule):
     rule_role_ids = {role.id for role in rule.roles}
     return bool(user_role_ids & rule_role_ids)
 
-@rule_bp.route('/rules', methods=['POST'])
+@rule_bp.route('', methods=['POST'])
 @token_required
 def upload_rule(current_user):
     if 'file' not in request.files:
@@ -61,7 +61,7 @@ def upload_rule(current_user):
     db.session.commit()
     return jsonify({'id': rule.id, 'filename': rule.filename, 'description': rule.description, 'roles': [r.name for r in rule.roles]}), 201
 
-@rule_bp.route('/rules', methods=['GET'])
+@rule_bp.route('', methods=['GET'])
 @token_required
 def list_rules(current_user):
     if is_admin(current_user):
@@ -77,7 +77,7 @@ def list_rules(current_user):
         for r in rules
     ])
 
-@rule_bp.route('/rules/<rule_id>', methods=['GET'])
+@rule_bp.route('/<rule_id>', methods=['GET'])
 @token_required
 def get_rule(current_user, rule_id):
     try:
@@ -92,7 +92,7 @@ def get_rule(current_user, rule_id):
         return send_file(io.BytesIO(rule.data), as_attachment=True, download_name=rule.filename)
     return jsonify({'id': rule.id, 'filename': rule.filename, 'description': rule.description, 'roles': [role.name for role in rule.roles], 'owner': rule.user_id})
 
-@rule_bp.route('/rules/<rule_id>', methods=['PUT'])
+@rule_bp.route('/<rule_id>', methods=['PUT'])
 @token_required
 def update_rule(current_user, rule_id):
     try:
@@ -124,7 +124,7 @@ def update_rule(current_user, rule_id):
     db.session.commit()
     return jsonify({'message': 'Rule updated successfully'})
 
-@rule_bp.route('/rules/<rule_id>', methods=['DELETE'])
+@rule_bp.route('/<rule_id>', methods=['DELETE'])
 @token_required
 def delete_rule(current_user, rule_id):
     try:

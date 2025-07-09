@@ -1,6 +1,5 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from flask_restx import Api
 import os
 
 db = SQLAlchemy()
@@ -16,22 +15,6 @@ def create_app(config=None):
         app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
     db.init_app(app)
-    
-    # Initialize Swagger API
-    api = Api(app, 
-              title='Confusys API',
-              version='1.0',
-              description='A Flask-based API for user, machine, and role management with audit script generation',
-              doc='/docs/',
-              authorizations={
-                  'Bearer': {
-                      'type': 'apiKey',
-                      'in': 'header',
-                      'name': 'Authorization',
-                      'description': 'JWT token in format: Bearer <token>'
-                  }
-              },
-              security='Bearer')
     
     with app.app_context():
         db.create_all()
@@ -51,9 +34,9 @@ def create_app(config=None):
         if not admin_user:
             admin_user = User(
                 username='admin',
-                email='admin@example.com',
-                password_hash=generate_password_hash('admin')
+                email='admin@example.com'
             )
+            admin_user.set_password('admin')
             admin_user.roles.append(admin_role)
             db.session.add(admin_user)
             db.session.commit()
@@ -63,9 +46,9 @@ def create_app(config=None):
     from api.routes.role_routes import role_bp
     from api.routes.rule_routes import rule_bp
     
-    app.register_blueprint(user_bp)
-    app.register_blueprint(machine_bp)
-    app.register_blueprint(role_bp)
-    app.register_blueprint(rule_bp)
+    app.register_blueprint(user_bp, url_prefix='/user')
+    app.register_blueprint(machine_bp, url_prefix='/machines')
+    app.register_blueprint(role_bp, url_prefix='/roles')
+    app.register_blueprint(rule_bp, url_prefix='/rules')
     
     return app 

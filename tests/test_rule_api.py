@@ -16,7 +16,8 @@ def get_admin_token(client):
 def client():
     test_config = {
         'TESTING': True,
-        'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:'
+        'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',
+        'SECRET_KEY': 'test-secret-key'
     }
     app = create_app(test_config)
     with app.app_context():

@@ -7,7 +7,7 @@ import uuid
 
 role_bp = Blueprint('role', __name__)
 
-@role_bp.route('/roles', methods=['POST'])
+@role_bp.route('', methods=['POST'])
 @token_required
 def create_role(current_user):
     if not is_admin(current_user):
@@ -24,13 +24,13 @@ def create_role(current_user):
     db.session.commit()
     return jsonify({'id': role.id, 'name': role.name, 'description': role.description}), 201
 
-@role_bp.route('/roles', methods=['GET'])
+@role_bp.route('', methods=['GET'])
 @token_required
 def list_roles(current_user):
     roles = Role.query.all()
     return jsonify([{'id': r.id, 'name': r.name, 'description': r.description} for r in roles])
 
-@role_bp.route('/roles/<int:role_id>', methods=['GET'])
+@role_bp.route('/<int:role_id>', methods=['GET'])
 @token_required
 def get_role(current_user, role_id):
     role = db.session.get(Role, role_id)
@@ -38,7 +38,7 @@ def get_role(current_user, role_id):
         return jsonify({'error': 'Role not found'}), 404
     return jsonify({'id': role.id, 'name': role.name, 'description': role.description})
 
-@role_bp.route('/roles/<int:role_id>', methods=['PUT'])
+@role_bp.route('/<int:role_id>', methods=['PUT'])
 @token_required
 def update_role(current_user, role_id):
     if not is_admin(current_user):
@@ -52,7 +52,7 @@ def update_role(current_user, role_id):
     db.session.commit()
     return jsonify({'message': 'Role updated successfully'})
 
-@role_bp.route('/roles/<int:role_id>', methods=['DELETE'])
+@role_bp.route('/<int:role_id>', methods=['DELETE'])
 @token_required
 def delete_role(current_user, role_id):
     if not is_admin(current_user):
@@ -64,7 +64,7 @@ def delete_role(current_user, role_id):
     db.session.commit()
     return jsonify({'message': 'Role deleted successfully'})
 
-@role_bp.route('/roles/<int:role_id>/assign_user/<user_id>', methods=['POST'])
+@role_bp.route('/<int:role_id>/assign_user/<user_id>', methods=['POST'])
 @token_required
 def assign_role_to_user(current_user, role_id, user_id):
     if not is_admin(current_user):
@@ -78,7 +78,7 @@ def assign_role_to_user(current_user, role_id, user_id):
         db.session.commit()
     return jsonify({'message': 'Role assigned to user'})
 
-@role_bp.route('/roles/<int:role_id>/remove_user/<user_id>', methods=['POST'])
+@role_bp.route('/<int:role_id>/remove_user/<user_id>', methods=['POST'])
 @token_required
 def remove_role_from_user(current_user, role_id, user_id):
     if not is_admin(current_user):
@@ -92,7 +92,7 @@ def remove_role_from_user(current_user, role_id, user_id):
         db.session.commit()
     return jsonify({'message': 'Role removed from user'})
 
-@role_bp.route('/roles/<int:role_id>/assign_machine/<machine_id>', methods=['POST'])
+@role_bp.route('/<int:role_id>/assign_machine/<machine_id>', methods=['POST'])
 @token_required
 def assign_role_to_machine(current_user, role_id, machine_id):
     if not is_admin(current_user):
@@ -106,7 +106,7 @@ def assign_role_to_machine(current_user, role_id, machine_id):
         db.session.commit()
     return jsonify({'message': 'Role assigned to machine'})
 
-@role_bp.route('/roles/<int:role_id>/remove_machine/<machine_id>', methods=['POST'])
+@role_bp.route('/<int:role_id>/remove_machine/<machine_id>', methods=['POST'])
 @token_required
 def remove_role_from_machine(current_user, role_id, machine_id):
     if not is_admin(current_user):

@@ -69,7 +69,7 @@ def user_can_access_machine(user, machine):
 
 machine_bp = Blueprint('machine', __name__)
 
-@machine_bp.route('/machines', methods=['POST'])
+@machine_bp.route('', methods=['POST'])
 @token_required
 def register_machine(current_user):
     data = request.get_json()
@@ -89,7 +89,7 @@ def register_machine(current_user):
     db.session.commit()
     return jsonify({'machine_id': machine.id, 'token': machine.token, 'script': script}), 201
 
-@machine_bp.route('/machines', methods=['GET'])
+@machine_bp.route('', methods=['GET'])
 @token_required
 def list_machines(current_user):
     if is_admin(current_user):
@@ -102,7 +102,7 @@ def list_machines(current_user):
         for m in machines
     ])
 
-@machine_bp.route('/machines/<machine_id>', methods=['GET'])
+@machine_bp.route('/<machine_id>', methods=['GET'])
 @token_required
 def get_machine(current_user, machine_id):
     try:
@@ -114,7 +114,7 @@ def get_machine(current_user, machine_id):
         return jsonify({'error': 'Machine not found or access denied'}), 404
     return jsonify({'id': machine.id, 'name': machine.name, 'description': machine.description, 'token': machine.token, 'roles': [r.name for r in machine.roles]})
 
-@machine_bp.route('/machines/<machine_id>', methods=['PUT'])
+@machine_bp.route('/<machine_id>', methods=['PUT'])
 @token_required
 def update_machine(current_user, machine_id):
     try:
@@ -134,7 +134,7 @@ def update_machine(current_user, machine_id):
     db.session.commit()
     return jsonify({'message': 'Machine updated successfully'})
 
-@machine_bp.route('/machines/<machine_id>', methods=['DELETE'])
+@machine_bp.route('/<machine_id>', methods=['DELETE'])
 @token_required
 def delete_machine(current_user, machine_id):
     try:
@@ -148,7 +148,7 @@ def delete_machine(current_user, machine_id):
     db.session.commit()
     return jsonify({'message': 'Machine deleted successfully'})
 
-@machine_bp.route('/machines/<machine_id>/files', methods=['POST'])
+@machine_bp.route('/<machine_id>/files', methods=['POST'])
 @token_required
 def upload_machine_file(current_user, machine_id):
     try:
@@ -170,7 +170,7 @@ def upload_machine_file(current_user, machine_id):
     db.session.commit()
     return jsonify({'id': machine_file.id, 'filename': machine_file.filename}), 201
 
-@machine_bp.route('/machines/<machine_id>/files', methods=['GET'])
+@machine_bp.route('/<machine_id>/files', methods=['GET'])
 @token_required
 def list_machine_files(current_user, machine_id):
     try:
@@ -183,7 +183,7 @@ def list_machine_files(current_user, machine_id):
     files = [{'id': f.id, 'filename': f.filename} for f in machine.files]
     return jsonify(files)
 
-@machine_bp.route('/machines/<machine_id>/files/<file_id>', methods=['DELETE'])
+@machine_bp.route('/<machine_id>/files/<file_id>', methods=['DELETE'])
 @token_required
 def delete_machine_file(current_user, machine_id, file_id):
     try:
@@ -201,15 +201,19 @@ def delete_machine_file(current_user, machine_id, file_id):
     db.session.commit()
     return jsonify({'message': 'File deleted successfully'})
 
-@machine_bp.route('/machines/<machine_id>/script', methods=['GET'])
+@machine_bp.route('/<machine_id>/script', methods=['GET'])
 @token_required
 def get_machine_script(current_user, machine_id):
+    try:
+        uuid.UUID(str(machine_id))
+    except ValueError:
+        return jsonify({'error': 'Invalid machine ID format'}), 400
     machine = db.session.get(Machine, machine_id)
     if not machine or not user_can_access_machine(current_user, machine):
         return jsonify({'error': 'Machine not found or access denied'}), 404
-    return (machine.script, 200, {'Content-Type': 'text/x-shellscript; charset=utf-8'})
+    return jsonify({'script': machine.script})
 
-@machine_bp.route('/machines/technologies', methods=['GET'])
+@machine_bp.route('/technologies', methods=['GET'])
 def list_technologies():
     return jsonify([
         {"key": k, "description": TECH_DESCRIPTIONS.get(k, k)}
