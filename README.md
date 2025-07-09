@@ -67,6 +67,29 @@ A Flask-based API for managing users, roles, and machines with secure JWT authen
 - Get: `GET /machines/<machine_id>`
 - Update: `PUT /machines/<machine_id>` `{name, description, roles}`
 - Delete: `DELETE /machines/<machine_id>`
+- **Upload file to machine:** `POST /machines/<machine_id>/files` (multipart/form-data, field: `file`)
+- **List files for machine:** `GET /machines/<machine_id>/files`
+- **Delete file from machine:** `DELETE /machines/<machine_id>/files/<file_id>`
+
+#### Example: Upload a file to a machine
+```sh
+curl -X POST http://localhost:5000/machines/<machine_id>/files \
+  -H "Authorization: Bearer <user_token>" \
+  -F "file=@/path/to/yourfile.txt"
+```
+
+#### Example: List files for a machine
+```sh
+curl -X GET http://localhost:5000/machines/<machine_id>/files \
+  -H "Authorization: Bearer <user_token>"
+```
+
+#### Example: Delete a file from a machine
+```sh
+curl -X DELETE http://localhost:5000/machines/<machine_id>/files/<file_id> \
+  -H "Authorization: Bearer <user_token>"
+```
+- Only users with a matching role (or admin) can upload, list, or delete files for a machine.
 
 ## Example Usage
 
