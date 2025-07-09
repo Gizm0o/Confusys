@@ -1,7 +1,7 @@
 from __future__ import annotations
 from api import db
 from uuid import uuid4
-from typing import List, TYPE_CHECKING
+from typing import List, TYPE_CHECKING, Optional
 from sqlalchemy.orm import Mapped
 from datetime import datetime, timezone
 if TYPE_CHECKING:
@@ -27,6 +27,14 @@ class Machine(db.Model):
     user_id = db.Column(db.String(36), db.ForeignKey('user.id'), nullable=False)
     user = db.relationship('User', backref=db.backref('machines', lazy=True))
     roles: Mapped[list[Role]] = db.relationship('Role', secondary=machine_roles, backref=db.backref('machines', lazy='dynamic'))  # type: ignore 
+    script = db.Column(db.Text)
+
+    def __init__(self, name: str, user_id: str, description: Optional[str] = None, script: Optional[str] = None):
+        super().__init__()
+        self.name = name
+        self.user_id = user_id
+        self.description = description
+        self.script = script
 
 # Association table for rules and roles
 rule_roles = db.Table('rule_roles',
