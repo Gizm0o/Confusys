@@ -1,47 +1,52 @@
 # Confusys API
 
-A Flask-based API for managing users, roles, and machines with secure JWT authentication and role-based access control.
+A Flask-based API for user, machine, and role management with audit script generation and role-based access control.
 
 ## Features
-- User registration and login with JWT authentication
-- Role-based access control (users and machines can have multiple roles)
-- Admin-only role management (create, update, delete, assign/remove roles)
-- Machine management (CRUD, attach roles, secure by role)
-- Default admin account created at startup
-- Comprehensive test suite (pytest)
 
-## Setup
+- **User Management**: Registration, login, and JWT authentication
+- **Role-Based Access Control**: Admin and user roles with different permissions
+- **Machine Management**: Register machines with custom audit script generation
+- **Rule File Management**: Upload and manage rule files
+- **Modular Audit Scripts**: Select technologies to include in audit scripts
+- **Swagger Documentation**: Interactive API documentation
 
-1. **Install dependencies:**
-   ```sh
+## Quick Start
+
+1. **Install dependencies**:
+   ```bash
    pip install -r requirements.txt
    ```
 
-2. **Configure environment:**
-   - Create a `.env` file (optional) with:
-     ```
-     DATABASE_URL=sqlite:///confusys.db  # or your preferred DB URL
-     SECRET_KEY=your-secret-key
-     ```
-   - Defaults: `SECRET_KEY=dev`, SQLite in-memory for tests.
-
-3. **Run the app:**
-   ```sh
+2. **Run the application**:
+   ```bash
    python app.py
    ```
-   Or with Docker Compose:
-   ```sh
-   docker-compose up --build
-   ```
 
-4. **Default admin account:**
-   - Username: `admin`
-   - Password: `admin`
-   - Email: `admin@example.com`
+3. **Access the API**:
+   - API Base URL: `http://localhost:5000`
+   - Swagger Documentation: `http://localhost:5000/swagger`
+   - OpenAPI Spec: `http://localhost:5000/docs`
 
-## API Endpoints
+## API Documentation
 
-### Authentication
+### Swagger UI
+
+The API includes interactive Swagger documentation available at `/swagger`. This provides:
+
+- **Interactive API Explorer**: Test endpoints directly from the browser
+- **Request/Response Examples**: See expected request formats and responses
+- **Authentication Support**: JWT Bearer token authentication
+- **Endpoint Documentation**: Detailed descriptions of all API endpoints
+
+To access the Swagger UI:
+1. Start the application: `python app.py`
+2. Open your browser to: `http://localhost:5000/swagger`
+3. Use the interactive interface to explore and test the API
+
+### API Endpoints
+
+#### Authentication
 - Register: `POST /user/register` `{username, email, password}`
 - Login: `POST /user/login` `{username, password}`
 
