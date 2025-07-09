@@ -33,7 +33,7 @@ def list_roles(current_user):
 @role_bp.route('/roles/<int:role_id>', methods=['GET'])
 @token_required
 def get_role(current_user, role_id):
-    role = Role.query.get(role_id)
+    role = db.session.get(Role, role_id)
     if not role:
         return jsonify({'error': 'Role not found'}), 404
     return jsonify({'id': role.id, 'name': role.name, 'description': role.description})
@@ -43,7 +43,7 @@ def get_role(current_user, role_id):
 def update_role(current_user, role_id):
     if not is_admin(current_user):
         return jsonify({'error': 'Admin only'}), 403
-    role = Role.query.get(role_id)
+    role = db.session.get(Role, role_id)
     if not role:
         return jsonify({'error': 'Role not found'}), 404
     data = request.get_json()
@@ -57,7 +57,7 @@ def update_role(current_user, role_id):
 def delete_role(current_user, role_id):
     if not is_admin(current_user):
         return jsonify({'error': 'Admin only'}), 403
-    role = Role.query.get(role_id)
+    role = db.session.get(Role, role_id)
     if not role:
         return jsonify({'error': 'Role not found'}), 404
     db.session.delete(role)
@@ -69,8 +69,8 @@ def delete_role(current_user, role_id):
 def assign_role_to_user(current_user, role_id, user_id):
     if not is_admin(current_user):
         return jsonify({'error': 'Admin only'}), 403
-    role = Role.query.get(role_id)
-    user = User.query.get(user_id)
+    role = db.session.get(Role, role_id)
+    user = db.session.get(User, user_id)
     if not role or not user:
         return jsonify({'error': 'Role or user not found'}), 404
     if role not in user.roles:
@@ -83,8 +83,8 @@ def assign_role_to_user(current_user, role_id, user_id):
 def remove_role_from_user(current_user, role_id, user_id):
     if not is_admin(current_user):
         return jsonify({'error': 'Admin only'}), 403
-    role = Role.query.get(role_id)
-    user = User.query.get(user_id)
+    role = db.session.get(Role, role_id)
+    user = db.session.get(User, user_id)
     if not role or not user:
         return jsonify({'error': 'Role or user not found'}), 404
     if role in user.roles:
@@ -97,8 +97,8 @@ def remove_role_from_user(current_user, role_id, user_id):
 def assign_role_to_machine(current_user, role_id, machine_id):
     if not is_admin(current_user):
         return jsonify({'error': 'Admin only'}), 403
-    role = Role.query.get(role_id)
-    machine = Machine.query.get(machine_id)
+    role = db.session.get(Role, role_id)
+    machine = db.session.get(Machine, machine_id)
     if not role or not machine:
         return jsonify({'error': 'Role or machine not found'}), 404
     if role not in machine.roles:
@@ -111,8 +111,8 @@ def assign_role_to_machine(current_user, role_id, machine_id):
 def remove_role_from_machine(current_user, role_id, machine_id):
     if not is_admin(current_user):
         return jsonify({'error': 'Admin only'}), 403
-    role = Role.query.get(role_id)
-    machine = Machine.query.get(machine_id)
+    role = db.session.get(Role, role_id)
+    machine = db.session.get(Machine, machine_id)
     if not role or not machine:
         return jsonify({'error': 'Role or machine not found'}), 404
     if role in machine.roles:

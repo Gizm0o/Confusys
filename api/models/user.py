@@ -2,6 +2,9 @@
 from api import db
 from werkzeug.security import generate_password_hash, check_password_hash
 from uuid import uuid4
+from typing import List, TYPE_CHECKING
+if TYPE_CHECKING:
+    from api.models.user import Role
 
 user_roles = db.Table('user_roles',
     db.Column('user_id', db.String(36), db.ForeignKey('user.id'), primary_key=True),
@@ -18,7 +21,7 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
-    roles = db.relationship('Role', secondary=user_roles, backref=db.backref('users', lazy='dynamic'))
+    roles: 'List[Role]' = db.relationship('Role', secondary=user_roles, backref=db.backref('users', lazy='dynamic'))
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)

@@ -7,6 +7,7 @@ from api import create_app, db
 from api.models.user import User, Role
 from api.models.machine import Machine
 import json
+import io
 
 @pytest.fixture
 def client():
@@ -92,3 +93,43 @@ def test_role_management_and_machine_access(client):
     # Clean up: delete role
     resp = client.delete(f'/roles/{role_id}', headers={'Authorization': f'Bearer {admin_token}'})
     assert resp.status_code == 200 
+
+def test_machine_file_upload_and_list(client):
+    admin_token = get_admin_token(client)
+    # Create a new role
+    resp = client.post('/roles', json={'name': 'fileop', 'description': 'File Operator'}, headers={'Authorization': f'Bearer {admin_token}'})
+    assert resp.status_code == 201
+    role_id = resp.get_json()['id']
+    # Register a user and assign fileop role
+    token, user_id = get_auth_token(client, username='fileuser', password='filepass', email='file@example.com')
+    client.post(f'/roles/{role_id}/assign_user/{user_id}', headers={'Authorization': f'Bearer {admin_token}'})
+    # Register a machine with fileop role
+    resp = client.post('/machines', json={'name': 'FileMachine', 'description': 'For file upload', 'roles': ['fileop']}, headers={'Authorization': f'Bearer {token}'})
+    assert resp.status_code == 201
+    machine_id = resp.get_json()['id']
+    # Upload a file
+    data = {'file': (io.BytesIO(b'hello world'), 'test.txt')}
+    resp = client.post(f'/machines/{machine_id}/files', headers={'Authorization': f'Bearer {token}'}, content_type='multipart/form-data', data=data)
+    assert resp.status_code == 201
+    file_id = resp.get_json()['id']
+    # List files
+    resp = client.get(f'/machines/{machine_id}/files', headers={'Authorization': f'Bearer {token}'})
+    assert resp.status_code == 200
+    files = resp.get_json()
+    assert any(f['id'] == file_id and f['filename'] == 'test.txt' for f in files)
+    # Access denied for user without role
+    token2, _ = get_auth_token(client, username='otheruser', password='otherpass', email='other@example.com')
+    data2 = {'file': (io.BytesIO(b'hello world'), 'test.txt')}
+    resp = client.post(f'/machines/{machine_id}/files', headers={'Authorization': f'Bearer {token2}'}, content_type='multipart/form-data', data=data2)
+    assert resp.status_code == 404
+    # Admin can upload
+    data3 = {'file': (io.BytesIO(b'admin file'), 'admin.txt')}
+    resp = client.post(f'/machines/{machine_id}/files', headers={'Authorization': f'Bearer {admin_token}'}, content_type='multipart/form-data', data=data3)
+    assert resp.status_code == 201
+    # Upload with no file
+    resp = client.post(f'/machines/{machine_id}/files', headers={'Authorization': f'Bearer {token}'}, content_type='multipart/form-data', data={})
+    assert resp.status_code == 400
+    # Upload with empty filename
+    data4 = {'file': (io.BytesIO(b''), '')}
+    resp = client.post(f'/machines/{machine_id}/files', headers={'Authorization': f'Bearer {token}'}, content_type='multipart/form-data', data=data4)
+    assert resp.status_code == 400 

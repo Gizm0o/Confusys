@@ -42,7 +42,7 @@ def manage_user(user_id):
         uuid.UUID(str(user_id))
     except ValueError:
         return jsonify({'error': 'Invalid user ID format'}), 400
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         return jsonify({'error': 'User not found'}), 404
     if request.method == 'GET':
