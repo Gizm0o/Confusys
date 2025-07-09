@@ -18,7 +18,22 @@ def create_app(config=None):
     
     with app.app_context():
         db.create_all()
-        # Create default admin user and role
+    
+    from api.routes.user_routes import user_bp
+    from api.routes.machine_routes import machine_bp
+    from api.routes.role_routes import role_bp
+    from api.routes.rule_routes import rule_bp
+    
+    app.register_blueprint(user_bp, url_prefix='/user')
+    app.register_blueprint(machine_bp, url_prefix='/machines')
+    app.register_blueprint(role_bp, url_prefix='/roles')
+    app.register_blueprint(rule_bp, url_prefix='/rules')
+    
+    return app
+
+def init_db(app):
+    """Initialize database with default admin user and role"""
+    with app.app_context():
         from api.models.user import User, Role
         from werkzeug.security import generate_password_hash
         
@@ -39,16 +54,4 @@ def create_app(config=None):
             admin_user.set_password('admin')
             admin_user.roles.append(admin_role)
             db.session.add(admin_user)
-            db.session.commit()
-    
-    from api.routes.user_routes import user_bp
-    from api.routes.machine_routes import machine_bp
-    from api.routes.role_routes import role_bp
-    from api.routes.rule_routes import rule_bp
-    
-    app.register_blueprint(user_bp, url_prefix='/user')
-    app.register_blueprint(machine_bp, url_prefix='/machines')
-    app.register_blueprint(role_bp, url_prefix='/roles')
-    app.register_blueprint(rule_bp, url_prefix='/rules')
-    
-    return app 
+            db.session.commit() 

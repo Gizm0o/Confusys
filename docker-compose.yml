@@ -11,10 +11,22 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d confusys_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   web:
     build: .
-    command: flask run --host=0.0.0.0 --port=5000
+    command: >
+      sh -c "
+        python wait_for_db.py &&
+        echo 'Creating database tables...' &&
+        python -c 'from api import create_app, db; app = create_app(); app.app_context().push(); db.create_all()' &&
+        echo 'Starting Flask app...' &&
+        flask run --host=0.0.0.0 --port=5000
+      "
     environment:
       FLASK_ENV: development
       DATABASE_URL: postgresql://user:password@db:5432/confusys_db
@@ -22,7 +34,8 @@ services:
     ports:
       - "5000:5000"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     volumes:
       - .:/app
 
