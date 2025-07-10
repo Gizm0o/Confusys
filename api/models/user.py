@@ -1,14 +1,8 @@
 from __future__ import annotations
-
-# User model: id is a UUID string primary key, password_hash is 256 chars for modern hash support
 from api import db
 from werkzeug.security import generate_password_hash, check_password_hash
 from uuid import uuid4
-from typing import List, TYPE_CHECKING
 from sqlalchemy.orm import Mapped
-
-if TYPE_CHECKING:
-    from api.models.user import Role
 
 user_roles = db.Table(
     "user_roles",
@@ -30,10 +24,12 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
-    roles: Mapped[list[Role]] = db.relationship("Role", secondary=user_roles, backref=db.backref("users", lazy="dynamic"))  # type: ignore
+    roles: Mapped[list[Role]] = db.relationship(
+        "Role", secondary=user_roles, backref=db.backref("users", lazy="dynamic")
+    )  # type: ignore
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
-        return check_password_hash(self.password_hash, password) 
+        return check_password_hash(self.password_hash, password)

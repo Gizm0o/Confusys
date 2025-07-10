@@ -1,16 +1,17 @@
 import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 import pytest
 from api import create_app, db
 from api.models.user import User, Role
-import json
 import io
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 
 def get_admin_token(client):
     resp = client.post('/user/login', json={'username': 'admin', 'password': 'admin'})
     return resp.get_json()['token']
+
 
 @pytest.fixture
 def client():
@@ -22,22 +23,20 @@ def client():
     app = create_app(test_config)
     with app.app_context():
         db.create_all()
-        
         # Create admin role
         admin_role = Role(name="admin", description="Administrator role")
         db.session.add(admin_role)
         db.session.commit()
-        
         # Create admin user
         admin_user = User(username="admin", email="admin@example.com")
         admin_user.set_password("admin")
         admin_user.roles.append(admin_role)
         db.session.add(admin_user)
         db.session.commit()
-        
         yield app.test_client()
         db.session.remove()
         db.drop_all()
+
 
 def test_create_update_delete_machine(client):
     admin_token = get_admin_token(client)
@@ -57,6 +56,7 @@ def test_create_update_delete_machine(client):
     # Get deleted machine
     resp = client.get(f'/machines/{machine_id}', headers={'Authorization': f'Bearer {admin_token}'})
     assert resp.status_code == 404
+
 
 def test_machine_file_upload_list_delete(client):
     admin_token = get_admin_token(client)
@@ -80,6 +80,7 @@ def test_machine_file_upload_list_delete(client):
     resp = client.get(f'/machines/{machine_id}/files', headers={'Authorization': f'Bearer {admin_token}'})
     assert resp.status_code == 200
     assert not resp.get_json()
+
 
 def test_machine_script_download_and_technologies(client):
     admin_token = get_admin_token(client)
@@ -127,6 +128,7 @@ def test_machine_script_download_and_technologies(client):
     for comment in block_comments[:3]:
         assert comment in script
 
+
 def test_machine_access_control(client):
     # Register as normal user
     client.post('/user/register', json={'username': 'user', 'email': 'user@example.com', 'password': 'pass'})
@@ -135,7 +137,6 @@ def test_machine_access_control(client):
     # Try to create machine (should succeed)
     resp = client.post('/machines', json={'name': 'mach4', 'description': 'desc', 'roles': []}, headers={'Authorization': f'Bearer {token}'})
     assert resp.status_code == 201
-    machine_id = resp.get_json()['machine_id']
     # Try to get/delete another machine (should fail)
     admin_token = get_admin_token(client)
     resp = client.post('/machines', json={'name': 'mach5', 'description': 'desc', 'roles': []}, headers={'Authorization': f'Bearer {admin_token}'})
@@ -143,4 +144,4 @@ def test_machine_access_control(client):
     resp = client.get(f'/machines/{other_id}', headers={'Authorization': f'Bearer {token}'})
     assert resp.status_code in (403, 404)
     resp = client.delete(f'/machines/{other_id}', headers={'Authorization': f'Bearer {token}'})
-    assert resp.status_code in (403, 404) 
+    assert resp.status_code in (403, 404)

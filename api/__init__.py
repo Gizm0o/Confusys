@@ -1,6 +1,7 @@
+import os
+
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-import os
 
 db = SQLAlchemy()
 
@@ -22,10 +23,10 @@ def create_app(config=None):
     with app.app_context():
         db.create_all()
 
-    from api.routes.user_routes import user_bp
     from api.routes.machine_routes import machine_bp
     from api.routes.role_routes import role_bp
     from api.routes.rule_routes import rule_bp
+    from api.routes.user_routes import user_bp
 
     app.register_blueprint(user_bp, url_prefix="/user")
     app.register_blueprint(machine_bp, url_prefix="/machines")
@@ -39,7 +40,6 @@ def init_db(app):
     """Initialize database with default admin user and role"""
     with app.app_context():
         from api.models.user import User, Role
-        from werkzeug.security import generate_password_hash
 
         # Create admin role if it doesn't exist
         admin_role = Role.query.filter_by(name="admin").first()
@@ -55,4 +55,4 @@ def init_db(app):
             admin_user.set_password("admin")
             admin_user.roles.append(admin_role)
             db.session.add(admin_user)
-            db.session.commit() 
+            db.session.commit()

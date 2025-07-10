@@ -3,8 +3,9 @@ from flask import render_template
 
 app = create_app()
 
+
 # Add Swagger documentation endpoint
-@app.route('/docs')
+@app.route("/docs")
 def swagger_docs():
     """Return OpenAPI specification for the API"""
     swagger_spec = {
@@ -12,13 +13,10 @@ def swagger_docs():
         "info": {
             "title": "Confusys API",
             "version": "1.0.0",
-            "description": "A Flask-based API for user, machine, and role management with audit script generation"
+            "description": "A Flask-based API for user, machine, and role management with audit script generation",
         },
         "servers": [
-            {
-                "url": "http://localhost:5000",
-                "description": "Development server"
-            }
+            {"url": "http://localhost:5000", "description": "Development server"}
         ],
         "paths": {
             "/user/register": {
@@ -34,12 +32,12 @@ def swagger_docs():
                                     "properties": {
                                         "username": {"type": "string"},
                                         "email": {"type": "string"},
-                                        "password": {"type": "string"}
+                                        "password": {"type": "string"},
                                     },
-                                    "required": ["username", "email", "password"]
+                                    "required": ["username", "email", "password"],
                                 }
                             }
-                        }
+                        },
                     },
                     "responses": {
                         "201": {
@@ -48,16 +46,14 @@ def swagger_docs():
                                 "application/json": {
                                     "schema": {
                                         "type": "object",
-                                        "properties": {
-                                            "message": {"type": "string"}
-                                        }
+                                        "properties": {"message": {"type": "string"}},
                                     }
                                 }
-                            }
+                            },
                         },
                         "400": {"description": "Missing required fields"},
-                        "409": {"description": "User already exists"}
-                    }
+                        "409": {"description": "User already exists"},
+                    },
                 }
             },
             "/user/login": {
@@ -72,12 +68,12 @@ def swagger_docs():
                                     "type": "object",
                                     "properties": {
                                         "username": {"type": "string"},
-                                        "password": {"type": "string"}
+                                        "password": {"type": "string"},
                                     },
-                                    "required": ["username", "password"]
+                                    "required": ["username", "password"],
                                 }
                             }
-                        }
+                        },
                     },
                     "responses": {
                         "200": {
@@ -89,15 +85,15 @@ def swagger_docs():
                                         "properties": {
                                             "message": {"type": "string"},
                                             "user_id": {"type": "string"},
-                                            "token": {"type": "string"}
-                                        }
+                                            "token": {"type": "string"},
+                                        },
                                     }
                                 }
-                            }
+                            },
                         },
                         "400": {"description": "Missing credentials"},
-                        "401": {"description": "Invalid credentials"}
-                    }
+                        "401": {"description": "Invalid credentials"},
+                    },
                 }
             },
             "/machines": {
@@ -118,14 +114,17 @@ def swagger_docs():
                                                 "id": {"type": "string"},
                                                 "name": {"type": "string"},
                                                 "ip_address": {"type": "string"},
-                                                "technologies": {"type": "array", "items": {"type": "string"}}
-                                            }
-                                        }
+                                                "technologies": {
+                                                    "type": "array",
+                                                    "items": {"type": "string"},
+                                                },
+                                            },
+                                        },
                                     }
                                 }
-                            }
+                            },
                         }
-                    }
+                    },
                 },
                 "post": {
                     "summary": "Register a new machine",
@@ -142,13 +141,13 @@ def swagger_docs():
                                         "ip_address": {"type": "string"},
                                         "technologies": {
                                             "type": "array",
-                                            "items": {"type": "string"}
-                                        }
+                                            "items": {"type": "string"},
+                                        },
                                     },
-                                    "required": ["name", "ip_address"]
+                                    "required": ["name", "ip_address"],
                                 }
                             }
-                        }
+                        },
                     },
                     "responses": {
                         "201": {
@@ -160,14 +159,14 @@ def swagger_docs():
                                         "properties": {
                                             "message": {"type": "string"},
                                             "machine_id": {"type": "string"},
-                                            "script": {"type": "string"}
-                                        }
+                                            "script": {"type": "string"},
+                                        },
                                     }
                                 }
-                            }
+                            },
                         }
-                    }
-                }
+                    },
+                },
             },
             "/machines/{machine_id}/script": {
                 "get": {
@@ -179,7 +178,7 @@ def swagger_docs():
                             "name": "machine_id",
                             "in": "path",
                             "required": True,
-                            "schema": {"type": "string"}
+                            "schema": {"type": "string"},
                         }
                     ],
                     "responses": {
@@ -189,10 +188,10 @@ def swagger_docs():
                                 "application/octet-stream": {
                                     "schema": {"type": "string", "format": "binary"}
                                 }
-                            }
+                            },
                         },
-                        "404": {"description": "Machine not found"}
-                    }
+                        "404": {"description": "Machine not found"},
+                    },
                 }
             },
             "/technologies": {
@@ -206,12 +205,12 @@ def swagger_docs():
                                 "application/json": {
                                     "schema": {
                                         "type": "array",
-                                        "items": {"type": "string"}
+                                        "items": {"type": "string"},
                                     }
                                 }
-                            }
+                            },
                         }
-                    }
+                    },
                 }
             },
             "/rules": {
@@ -231,14 +230,14 @@ def swagger_docs():
                                             "properties": {
                                                 "id": {"type": "string"},
                                                 "filename": {"type": "string"},
-                                                "upload_date": {"type": "string"}
-                                            }
-                                        }
+                                                "upload_date": {"type": "string"},
+                                            },
+                                        },
                                     }
                                 }
-                            }
+                            },
                         }
-                    }
+                    },
                 },
                 "post": {
                     "summary": "Upload a rule file",
@@ -251,14 +250,11 @@ def swagger_docs():
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "file": {
-                                            "type": "string",
-                                            "format": "binary"
-                                        }
-                                    }
+                                        "file": {"type": "string", "format": "binary"}
+                                    },
                                 }
                             }
-                        }
+                        },
                     },
                     "responses": {
                         "201": {
@@ -269,36 +265,35 @@ def swagger_docs():
                                         "type": "object",
                                         "properties": {
                                             "message": {"type": "string"},
-                                            "rule_id": {"type": "string"}
-                                        }
+                                            "rule_id": {"type": "string"},
+                                        },
                                     }
                                 }
-                            }
+                            },
                         }
-                    }
-                }
-            }
+                    },
+                },
+            },
         },
         "components": {
             "securitySchemes": {
-                "Bearer": {
-                    "type": "http",
-                    "scheme": "bearer",
-                    "bearerFormat": "JWT"
-                }
+                "Bearer": {"type": "http", "scheme": "bearer", "bearerFormat": "JWT"}
             }
-        }
+        },
     }
     return swagger_spec
 
-@app.route('/swagger')
+
+@app.route("/swagger")
 def swagger_ui():
     """Serve Swagger UI"""
-    return render_template('swagger.html')
+    return render_template("swagger.html")
 
-@app.route('/')
+
+@app.route("/")
 def index():
-    return {'message': 'Confusys API is running. Visit /swagger for API documentation.'}
+    return {"message": "Confusys API is running. Visit /swagger for API documentation."}
 
-if __name__ == '__main__':
-    app.run(debug=True) 
+
+if __name__ == "__main__":
+    app.run(debug=True)
