@@ -1,6 +1,7 @@
 import io
 import uuid
 from functools import wraps
+from typing import Any, Callable, Tuple, Union
 
 from flask import Blueprint, current_app, jsonify, request, send_file
 from werkzeug.utils import secure_filename
@@ -12,9 +13,9 @@ from api.models.user import Role, User
 rule_bp = Blueprint("rule", __name__)
 
 
-def token_required(f):
+def token_required(f: Callable) -> Callable:
     @wraps(f)
-    def decorated(*args, **kwargs):
+    def decorated(*args: Any, **kwargs: Any) -> Union[Tuple[Any, int], Any]:
         token = None
         if "Authorization" in request.headers:
             auth_header = request.headers["Authorization"]
@@ -38,11 +39,11 @@ def token_required(f):
     return decorated
 
 
-def is_admin(user):
+def is_admin(user: User) -> bool:
     return any(role.name == "admin" for role in user.roles)
 
 
-def user_can_access_rule(user, rule):
+def user_can_access_rule(user: User, rule: Rule) -> bool:
     if is_admin(user) or rule.user_id == user.id:
         return True
     user_role_ids = {role.id for role in user.roles}
@@ -52,7 +53,7 @@ def user_can_access_rule(user, rule):
 
 @rule_bp.route("", methods=["POST"])
 @token_required
-def upload_rule(current_user):
+def upload_rule(current_user: User) -> Union[Any, Tuple[Any, int]]:
     if "file" not in request.files:
         return jsonify({"error": "No file part"}), 400
     file = request.files["file"]
@@ -84,7 +85,7 @@ def upload_rule(current_user):
 
 @rule_bp.route("", methods=["GET"])
 @token_required
-def list_rules(current_user):
+def list_rules(current_user: User) -> Any:
     if is_admin(current_user):
         rules = Rule.query.all()
     else:
@@ -109,7 +110,7 @@ def list_rules(current_user):
 
 @rule_bp.route("/<rule_id>", methods=["GET"])
 @token_required
-def get_rule(current_user, rule_id):
+def get_rule(current_user: User, rule_id: str) -> Union[Any, Tuple[Any, int]]:
     try:
         uuid.UUID(str(rule_id))
     except ValueError:
@@ -135,7 +136,7 @@ def get_rule(current_user, rule_id):
 
 @rule_bp.route("/<rule_id>", methods=["PUT"])
 @token_required
-def update_rule(current_user, rule_id):
+def update_rule(current_user: User, rule_id: str) -> Union[Any, Tuple[Any, int]]:
     try:
         uuid.UUID(str(rule_id))
     except ValueError:
@@ -168,7 +169,7 @@ def update_rule(current_user, rule_id):
 
 @rule_bp.route("/<rule_id>", methods=["DELETE"])
 @token_required
-def delete_rule(current_user, rule_id):
+def delete_rule(current_user: User, rule_id: str) -> Union[Any, Tuple[Any, int]]:
     try:
         uuid.UUID(str(rule_id))
     except ValueError:

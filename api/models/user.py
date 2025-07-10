@@ -29,10 +29,10 @@ class User(db.Model):
     password_hash = db.Column(db.String(256), nullable=False)
     roles: Mapped[list[Role]] = db.relationship(
         "Role", secondary=user_roles, backref=db.backref("users", lazy="dynamic")
-    )  # type: ignore
+    )
 
-    def set_password(self, password):
+    def set_password(self, password: str) -> None:
         self.password_hash = generate_password_hash(password)
 
-    def check_password(self, password):
+    def check_password(self, password: str) -> bool:
         return check_password_hash(self.password_hash, password)

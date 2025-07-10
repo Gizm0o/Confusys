@@ -1,4 +1,5 @@
 import os
+from typing import Any, Dict, Optional
 
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
@@ -6,7 +7,7 @@ from flask_sqlalchemy import SQLAlchemy
 db = SQLAlchemy()
 
 
-def create_app(config=None):
+def create_app(config: Optional[Dict[str, Any]] = None) -> Flask:
     app = Flask(__name__)
 
     if config:
@@ -36,7 +37,7 @@ def create_app(config=None):
     return app
 
 
-def init_db(app):
+def init_db(app: Flask) -> None:
     """Initialize database with default admin user and role"""
     with app.app_context():
         from api.models.user import Role, User

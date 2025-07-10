@@ -1,5 +1,6 @@
 import uuid
 from functools import wraps
+from typing import Any, Callable, List, Tuple, Union
 
 import jwt
 from flask import Blueprint, current_app, jsonify, request
@@ -39,9 +40,9 @@ TECH_DESCRIPTIONS = {
 }
 
 
-def token_required(f):
+def token_required(f: Callable) -> Callable:
     @wraps(f)
-    def decorated(*args, **kwargs):
+    def decorated(*args: Any, **kwargs: Any) -> Union[Tuple[Any, int], Any]:
         token = None
         if "Authorization" in request.headers:
             auth_header = request.headers["Authorization"]
@@ -63,11 +64,11 @@ def token_required(f):
     return decorated
 
 
-def is_admin(user):
+def is_admin(user: User) -> bool:
     return any(role.name == "admin" for role in user.roles)
 
 
-def user_can_access_machine(user, machine):
+def user_can_access_machine(user: User, machine: Machine) -> bool:
     if is_admin(user):
         return True
     user_role_ids = {role.id for role in user.roles}
@@ -80,7 +81,7 @@ machine_bp = Blueprint("machine", __name__)
 
 @machine_bp.route("", methods=["POST"])
 @token_required
-def register_machine(current_user):
+def register_machine(current_user: User) -> Tuple[Any, int]:
     data = request.get_json()
     name = data.get("name")
     description = data.get("description")
@@ -106,7 +107,7 @@ def register_machine(current_user):
 
 @machine_bp.route("", methods=["GET"])
 @token_required
-def list_machines(current_user):
+def list_machines(current_user: User) -> Any:
     if is_admin(current_user):
         machines = Machine.query.all()
     else:
@@ -130,7 +131,7 @@ def list_machines(current_user):
 
 @machine_bp.route("/<machine_id>", methods=["GET"])
 @token_required
-def get_machine(current_user, machine_id):
+def get_machine(current_user: User, machine_id: str) -> Union[Any, Tuple[Any, int]]:
     try:
         uuid.UUID(str(machine_id))
     except ValueError:
@@ -151,7 +152,7 @@ def get_machine(current_user, machine_id):
 
 @machine_bp.route("/<machine_id>", methods=["PUT"])
 @token_required
-def update_machine(current_user, machine_id):
+def update_machine(current_user: User, machine_id: str) -> Union[Any, Tuple[Any, int]]:
     try:
         uuid.UUID(str(machine_id))
     except ValueError:
@@ -172,7 +173,7 @@ def update_machine(current_user, machine_id):
 
 @machine_bp.route("/<machine_id>", methods=["DELETE"])
 @token_required
-def delete_machine(current_user, machine_id):
+def delete_machine(current_user: User, machine_id: str) -> Union[Any, Tuple[Any, int]]:
     try:
         uuid.UUID(str(machine_id))
     except ValueError:
@@ -187,7 +188,7 @@ def delete_machine(current_user, machine_id):
 
 @machine_bp.route("/<machine_id>/files", methods=["POST"])
 @token_required
-def upload_machine_file(current_user, machine_id):
+def upload_machine_file(current_user: User, machine_id: str) -> Union[Any, Tuple[Any, int]]:
     try:
         uuid.UUID(str(machine_id))
     except ValueError:
@@ -210,7 +211,7 @@ def upload_machine_file(current_user, machine_id):
 
 @machine_bp.route("/<machine_id>/files", methods=["GET"])
 @token_required
-def list_machine_files(current_user, machine_id):
+def list_machine_files(current_user: User, machine_id: str) -> Any:
     try:
         uuid.UUID(str(machine_id))
     except ValueError:
@@ -224,7 +225,7 @@ def list_machine_files(current_user, machine_id):
 
 @machine_bp.route("/<machine_id>/files/<file_id>", methods=["DELETE"])
 @token_required
-def delete_machine_file(current_user, machine_id, file_id):
+def delete_machine_file(current_user: User, machine_id: str, file_id: str) -> Union[Any, Tuple[Any, int]]:
     try:
         uuid.UUID(str(machine_id))
         uuid.UUID(str(file_id))
@@ -246,7 +247,7 @@ def delete_machine_file(current_user, machine_id, file_id):
 
 @machine_bp.route("/<machine_id>/script", methods=["GET"])
 @token_required
-def get_machine_script(current_user, machine_id):
+def get_machine_script(current_user: User, machine_id: str) -> Any:
     try:
         uuid.UUID(str(machine_id))
     except ValueError:
@@ -258,7 +259,7 @@ def get_machine_script(current_user, machine_id):
 
 
 @machine_bp.route("/technologies", methods=["GET"])
-def list_technologies():
+def list_technologies() -> Any:
     return jsonify(
         [
             {"key": k, "description": TECH_DESCRIPTIONS.get(k, k)}

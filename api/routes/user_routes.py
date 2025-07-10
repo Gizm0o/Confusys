@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, Tuple, Union
 
 import jwt
 from flask import Blueprint, current_app, jsonify, request
@@ -10,7 +11,7 @@ user_bp = Blueprint("user", __name__)
 
 
 @user_bp.route("/register", methods=["POST"])
-def register():
+def register() -> Tuple[Any, int]:
     """Register a new user"""
     data = request.get_json()
     username = data.get("username")
@@ -32,7 +33,7 @@ def register():
 
 
 @user_bp.route("/login", methods=["POST"])
-def login():
+def login() -> Tuple[Any, int]:
     """Login user and return JWT token"""
     data = request.get_json()
     username = data.get("username")
@@ -62,7 +63,7 @@ def login():
 
 
 @user_bp.route("/<user_id>", methods=["GET", "PUT", "DELETE"])
-def manage_user(user_id):
+def manage_user(user_id: str) -> Union[Any, Tuple[Any, int]]:
     """Get, update, or delete a user"""
     try:
         import uuid

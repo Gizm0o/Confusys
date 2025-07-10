@@ -35,7 +35,7 @@ SCRIPT_BLOCKS = {
 }
 
 
-def generate_audit_script(technologies):
+def generate_audit_script(technologies: list[str]) -> str:
     script = HEADER
     for tech in technologies:
         block = SCRIPT_BLOCKS.get(tech)
