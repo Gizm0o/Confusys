@@ -4,10 +4,6 @@ on:
   schedule:
     # Run security scans weekly
     - cron: '0 3 * * 1'
-  pull_request:
-    branches: [ main, master, develop ]
-  push:
-    branches: [ main, master, develop ]
 
 jobs:
   security-scan:
