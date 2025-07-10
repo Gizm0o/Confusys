@@ -1,8 +1,9 @@
-from flask import Blueprint, request, jsonify
-from api.models.user import User, Role
-from api.models.machine import Machine
+from flask import Blueprint, jsonify, request
+
 from api import db
-from api.routes.machine_routes import token_required, is_admin
+from api.models.machine import Machine
+from api.models.user import Role, User
+from api.routes.machine_routes import is_admin, token_required
 
 role_bp = Blueprint("role", __name__)
 

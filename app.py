@@ -1,5 +1,6 @@
-from api import create_app
 from flask import render_template
+
+from api import create_app
 
 app = create_app()
 

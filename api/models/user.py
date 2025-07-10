@@ -1,8 +1,11 @@
 from __future__ import annotations
-from api import db
-from werkzeug.security import generate_password_hash, check_password_hash
+
 from uuid import uuid4
+
 from sqlalchemy.orm import Mapped
+from werkzeug.security import check_password_hash, generate_password_hash
+
+from api import db
 
 user_roles = db.Table(
     "user_roles",

@@ -39,7 +39,7 @@ def create_app(config=None):
 def init_db(app):
     """Initialize database with default admin user and role"""
     with app.app_context():
-        from api.models.user import User, Role
+        from api.models.user import Role, User
 
         # Create admin role if it doesn't exist
         admin_role = Role.query.filter_by(name="admin").first()
