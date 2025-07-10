@@ -4,7 +4,7 @@ from api.models.machine import Machine
 from api import db
 from api.routes.machine_routes import token_required, is_admin
 
-role_bp = Blueprint('role', __name__)
+role_bp = Blueprint("role", __name__)
 
 
 @role_bp.route("", methods=["POST"])

@@ -12,9 +12,11 @@ if TYPE_CHECKING:
     from api.models.user import Role
 
 machine_roles = db.Table(
-    'machine_roles',
-    db.Column('machine_id', db.String(36), db.ForeignKey('machine.id'), primary_key=True),
-    db.Column('role_id', db.Integer, db.ForeignKey('role.id'), primary_key=True),
+    "machine_roles",
+    db.Column(
+        "machine_id", db.String(36), db.ForeignKey("machine.id"), primary_key=True
+    ),
+    db.Column("role_id", db.Integer, db.ForeignKey("role.id"), primary_key=True),
 )
 
 
@@ -24,9 +26,7 @@ class MachineFile(db.Model):
     )
     filename = db.Column(db.String(255), nullable=False)
     data = db.Column(db.LargeBinary, nullable=False)
-    machine_id = db.Column(
-        db.String(36), db.ForeignKey('machine.id'), nullable=False
-    )
+    machine_id = db.Column(db.String(36), db.ForeignKey("machine.id"), nullable=False)
 
 
 class Machine(db.Model):
@@ -37,14 +37,20 @@ class Machine(db.Model):
     description = db.Column(db.String(255))
     ip_address = db.Column(db.String(45))
     technologies = db.Column(db.PickleType)
-    user_id = db.Column(db.String(36), db.ForeignKey('user.id'), nullable=False)
-    user = db.relationship('User', backref=db.backref('machines', lazy=True))
+    user_id = db.Column(db.String(36), db.ForeignKey("user.id"), nullable=False)
+    user = db.relationship("User", backref=db.backref("machines", lazy=True))
     script = db.Column(db.Text)
-    token = db.Column(db.String(64), unique=True, nullable=False, default=lambda: str(uuid4()).replace("-", ""))
-    files = db.relationship('MachineFile', backref='machine', lazy=True)
+    token = db.Column(
+        db.String(64),
+        unique=True,
+        nullable=False,
+        default=lambda: str(uuid4()).replace("-", ""),
+    )
+    files = db.relationship("MachineFile", backref="machine", lazy=True)
     roles = db.relationship(
-        'Role', secondary='machine_roles',
-        backref=db.backref('machines', lazy='dynamic')
+        "Role",
+        secondary="machine_roles",
+        backref=db.backref("machines", lazy="dynamic"),
     )
 
 

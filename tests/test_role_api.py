@@ -4,20 +4,20 @@ import pytest
 from api import create_app, db
 from api.models.user import User, Role
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 
 def get_admin_token(client):
-    resp = client.post('/user/login', json={'username': 'admin', 'password': 'admin'})
-    return resp.get_json()['token']
+    resp = client.post("/user/login", json={"username": "admin", "password": "admin"})
+    return resp.get_json()["token"]
 
 
 @pytest.fixture
 def client():
     test_config = {
-        'TESTING': True,
-        'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',
-        'SECRET_KEY': 'test-secret-key'
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+        "SECRET_KEY": "test-secret-key",
     }
     app = create_app(test_config)
     with app.app_context():
