@@ -22,6 +22,19 @@ def client():
     app = create_app(test_config)
     with app.app_context():
         db.create_all()
+        
+        # Create admin role
+        admin_role = Role(name="admin", description="Administrator role")
+        db.session.add(admin_role)
+        db.session.commit()
+        
+        # Create admin user
+        admin_user = User(username="admin", email="admin@example.com")
+        admin_user.set_password("admin")
+        admin_user.roles.append(admin_role)
+        db.session.add(admin_user)
+        db.session.commit()
+        
         yield app.test_client()
         db.session.remove()
         db.drop_all()

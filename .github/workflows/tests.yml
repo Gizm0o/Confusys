@@ -26,10 +26,24 @@ jobs:
         pip install black isort flake8 mypy
     
     - name: Run Black (code formatting)
-      run: black --check --diff .
+      run: |
+        # Check if formatting is needed
+        if ! black --check .; then
+          echo "Code formatting issues found. Please run 'black .' locally to fix."
+          echo "Files that need formatting:"
+          black --check --diff . || true
+          exit 1
+        fi
     
     - name: Run isort (import sorting)
-      run: isort --check-only --diff .
+      run: |
+        # Check if import sorting is needed
+        if ! isort --check-only .; then
+          echo "Import sorting issues found. Please run 'isort .' locally to fix."
+          echo "Files that need sorting:"
+          isort --check-only --diff . || true
+          exit 1
+        fi
     
     - name: Run flake8 (linting)
       run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
