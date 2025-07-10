@@ -3,6 +3,7 @@ from api.models.user import User
 from api import db
 import jwt
 from flask import current_app
+from datetime import datetime, timezone, timedelta
 
 user_bp = Blueprint('user', __name__)
 
@@ -39,7 +40,10 @@ def login():
     
     user = User.query.filter_by(username=username).first()
     if user and user.check_password(password):
-        token = jwt.encode({'user_id': user.id}, current_app.config['SECRET_KEY'], algorithm='HS256')
+        expiration = datetime.now(timezone.utc) + timedelta(hours=10)
+        issued_at = datetime.now(timezone.utc)
+        payload = {'user_id': user.id,'exp': expiration,'iat': issued_at}
+        token = jwt.encode(payload, current_app.config['SECRET_KEY'], algorithm='HS256')
         return jsonify({'message': 'Authenticated successfully', 'user_id': user.id, 'token': token}), 200
     
     return jsonify({'error': 'Invalid credentials'}), 401
