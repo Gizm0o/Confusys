@@ -62,16 +62,74 @@ The test suite covers:
 
 ### CI/CD Pipeline
 
-The GitHub Actions workflow (`.github/workflows/tests.yml`) automatically runs tests on:
+The GitHub Actions workflow (`.github/workflows/tests.yml`) provides comprehensive quality assurance:
+
+#### **Pipeline Stages**
+1. **Code Quality Assurance**
+   - Black (code formatting)
+   - isort (import sorting)
+   - flake8 (linting)
+   - mypy (type checking)
+
+2. **Security Scanning**
+   - Bandit (Python security linting)
+   - Safety (dependency vulnerability scanning)
+   - Security reports as artifacts
+
+3. **Test Coverage Tracking**
+   - pytest with coverage reporting
+   - Codecov integration
+   - HTML coverage reports
+   - PostgreSQL integration tests
+
+4. **Dependency Management**
+   - Weekly dependency checks
+   - Automated PR creation for updates
+   - Dependabot integration
+
+#### **Triggers**
 - Push to main/master/develop branches
 - Pull requests to main/master/develop branches
+- Weekly scheduled dependency checks
 
-The pipeline includes:
-- Python 3.9 setup
-- PostgreSQL service for integration tests
-- Dependency caching for faster builds
-- Test coverage reporting
-- Codecov integration for coverage tracking
+### Code Quality Tools
+
+#### **Local Development**
+```bash
+# Install development tools
+pip install -r requirements.txt
+
+# Format code
+black .
+isort .
+
+# Lint code
+flake8 .
+mypy api/
+
+# Security checks
+bandit -r api/
+safety check
+
+# Run tests with coverage
+pytest tests/ -v --cov=api --cov-report=html
+```
+
+### Automated Features
+
+#### **Dependabot** (`.github/dependabot.yml`)
+- Weekly dependency updates
+- Automatic PR creation
+- Configurable update policies
+
+#### **Scheduled Tasks**
+- **Weekly dependency checks**: Mondays at 2 AM
+- **Automated dependency PRs**: When updates are available
+
+#### **Artifacts and Reports**
+- Test coverage reports (HTML and XML)
+- Security scan reports (JSON format)
+- Build cache for faster CI runs
 
 ## API Documentation
 

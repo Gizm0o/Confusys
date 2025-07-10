@@ -1,0 +1,129 @@
+name: Security Scan
+
+on:
+  schedule:
+    # Run security scans weekly
+    - cron: '0 3 * * 1'
+  pull_request:
+    branches: [ main, master, develop ]
+  push:
+    branches: [ main, master, develop ]
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install security tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install bandit safety pip-audit trivy-python-plugin
+    
+    - name: Run Bandit (Python security linting)
+      run: |
+        bandit -r api/ -f json -o bandit-report.json || true
+        bandit -r api/ -f txt -o bandit-report.txt || true
+    
+    - name: Run Safety (dependency vulnerability check)
+      run: |
+        safety check --json --output safety-report.json || true
+        safety check --full-report --output safety-report.txt || true
+    
+    - name: Run pip-audit
+      run: |
+        pip-audit --format json --output pip-audit-report.json || true
+        pip-audit --format text --output pip-audit-report.txt || true
+    
+    - name: Run Trivy (container vulnerability scanner)
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'json'
+        output: 'trivy-fs-report.json'
+    
+    - name: Upload security reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-reports-${{ github.run_id }}
+        path: |
+          bandit-report.json
+          bandit-report.txt
+          safety-report.json
+          safety-report.txt
+          pip-audit-report.json
+          pip-audit-report.txt
+          trivy-fs-report.json
+    
+    - name: Comment PR with security findings
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          
+          let comment = '## 🔒 Security Scan Results\n\n';
+          
+          // Read Bandit report
+          try {
+            const banditReport = JSON.parse(fs.readFileSync('bandit-report.json', 'utf8'));
+            if (banditReport.results && banditReport.results.length > 0) {
+              comment += '### ⚠️ Bandit Security Issues\n';
+              banditReport.results.forEach(issue => {
+                comment += `- **${issue.severity}**: ${issue.issue_text} in \`${issue.filename}:${issue.line_number}\`\n`;
+              });
+              comment += '\n';
+            }
+          } catch (e) {
+            comment += '✅ No Bandit security issues found\n\n';
+          }
+          
+          // Read Safety report
+          try {
+            const safetyReport = JSON.parse(fs.readFileSync('safety-report.json', 'utf8'));
+            if (safetyReport && safetyReport.length > 0) {
+              comment += '### ⚠️ Dependency Vulnerabilities\n';
+              safetyReport.forEach(vuln => {
+                comment += `- **${vuln.severity}**: ${vuln.package} ${vuln.installed_version} - ${vuln.description}\n`;
+              });
+              comment += '\n';
+            }
+          } catch (e) {
+            comment += '✅ No dependency vulnerabilities found\n\n';
+          }
+          
+          comment += '---\n*Security scan completed automatically*';
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+    
+    - name: Fail on high severity issues
+      run: |
+        # Check for high severity Bandit issues
+        if [ -f bandit-report.json ]; then
+          HIGH_ISSUES=$(jq '.results[] | select(.severity == "HIGH")' bandit-report.json | wc -l)
+          if [ "$HIGH_ISSUES" -gt 0 ]; then
+            echo "Found $HIGH_ISSUES high severity security issues"
+            exit 1
+          fi
+        fi
+        
+        # Check for high severity Safety issues
+        if [ -f safety-report.json ]; then
+          HIGH_VULNS=$(jq '.[] | select(.severity == "HIGH")' safety-report.json | wc -l)
+          if [ "$HIGH_VULNS" -gt 0 ]; then
+            echo "Found $HIGH_VULNS high severity vulnerabilities"
+            exit 1
+          fi
+        fi 
