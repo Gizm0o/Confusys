@@ -49,7 +49,7 @@ def login():
     return jsonify({'error': 'Invalid credentials'}), 401
 
 @user_bp.route('/<user_id>', methods=['GET', 'PUT', 'DELETE'])
-def manage_user(user_id):
+def manage_user(user_id): 
     """Get, update, or delete a user"""
     try:
         import uuid
