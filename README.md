@@ -28,6 +28,51 @@ A Flask-based API for user, machine, and role management with audit script gener
    - Swagger Documentation: `http://localhost:5000/swagger`
    - OpenAPI Spec: `http://localhost:5000/docs`
 
+## Testing
+
+The project includes a comprehensive test suite that runs automatically in the CI/CD pipeline.
+
+### Running Tests Locally
+
+**Option 1: Using the test runner script**
+```bash
+python run_tests.py
+```
+
+**Option 2: Using pytest directly**
+```bash
+# Run all tests
+pytest tests/ -v
+
+# Run with coverage
+pytest tests/ -v --cov=api --cov-report=html
+
+# Run specific test file
+pytest tests/test_user_api.py -v
+```
+
+### Test Coverage
+
+The test suite covers:
+- User registration and authentication
+- Machine management and script generation
+- Role-based access control
+- Rule file management
+- API endpoint validation
+
+### CI/CD Pipeline
+
+The GitHub Actions workflow (`.github/workflows/tests.yml`) automatically runs tests on:
+- Push to main/master/develop branches
+- Pull requests to main/master/develop branches
+
+The pipeline includes:
+- Python 3.9 setup
+- PostgreSQL service for integration tests
+- Dependency caching for faster builds
+- Test coverage reporting
+- Codecov integration for coverage tracking
+
 ## API Documentation
 
 ### Swagger UI

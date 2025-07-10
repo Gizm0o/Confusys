@@ -23,6 +23,11 @@ instance/
 # Test cache
 .pytest_cache/
 
+# Coverage reports
+.coverage
+coverage.xml
+htmlcov/
+
 # IDE files
 .vscode/
 .idea/
