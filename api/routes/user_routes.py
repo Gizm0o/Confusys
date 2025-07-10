@@ -90,3 +90,5 @@ def manage_user(user_id: str) -> Union[Any, Tuple[Any, int]]:
         db.session.delete(user)
         db.session.commit()
         return jsonify({"message": "User deleted successfully"})
+    else:
+        return jsonify({"error": "Method not allowed"}), 405

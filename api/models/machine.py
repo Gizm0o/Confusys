@@ -4,8 +4,6 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from sqlalchemy.orm import Mapped
-
 from api import db
 
 if TYPE_CHECKING:
@@ -71,5 +69,5 @@ class Rule(db.Model):
     description = db.Column(db.String(255))
     user_id = db.Column(db.String(36), db.ForeignKey("user.id"), nullable=False)
     user = db.relationship("User", backref=db.backref("rules", lazy=True))
-    roles: Mapped[list["Role"]] = db.relationship("Role", secondary=rule_roles, backref=db.backref("rules", lazy="dynamic"))
+    roles = db.relationship("Role", secondary=rule_roles, backref=db.backref("rules", lazy="dynamic"))
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))

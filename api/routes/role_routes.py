@@ -79,7 +79,9 @@ def delete_role(current_user: User, role_id: int) -> Union[Any, Tuple[Any, int]]
 
 @role_bp.route("/<int:role_id>/assign_user/<user_id>", methods=["POST"])
 @token_required
-def assign_role_to_user(current_user: User, role_id: int, user_id: str) -> Union[Any, Tuple[Any, int]]:
+def assign_role_to_user(
+    current_user: User, role_id: int, user_id: str
+) -> Union[Any, Tuple[Any, int]]:
     if not is_admin(current_user):
         return jsonify({"error": "Admin only"}), 403
     role = db.session.get(Role, role_id)
@@ -94,7 +96,9 @@ def assign_role_to_user(current_user: User, role_id: int, user_id: str) -> Union
 
 @role_bp.route("/<int:role_id>/remove_user/<user_id>", methods=["POST"])
 @token_required
-def remove_role_from_user(current_user: User, role_id: int, user_id: str) -> Union[Any, Tuple[Any, int]]:
+def remove_role_from_user(
+    current_user: User, role_id: int, user_id: str
+) -> Union[Any, Tuple[Any, int]]:
     if not is_admin(current_user):
         return jsonify({"error": "Admin only"}), 403
     role = db.session.get(Role, role_id)
@@ -109,7 +113,9 @@ def remove_role_from_user(current_user: User, role_id: int, user_id: str) -> Uni
 
 @role_bp.route("/<int:role_id>/assign_machine/<machine_id>", methods=["POST"])
 @token_required
-def assign_role_to_machine(current_user: User, role_id: int, machine_id: str) -> Union[Any, Tuple[Any, int]]:
+def assign_role_to_machine(
+    current_user: User, role_id: int, machine_id: str
+) -> Union[Any, Tuple[Any, int]]:
     if not is_admin(current_user):
         return jsonify({"error": "Admin only"}), 403
     role = db.session.get(Role, role_id)
@@ -124,7 +130,9 @@ def assign_role_to_machine(current_user: User, role_id: int, machine_id: str) ->
 
 @role_bp.route("/<int:role_id>/remove_machine/<machine_id>", methods=["POST"])
 @token_required
-def remove_role_from_machine(current_user: User, role_id: int, machine_id: str) -> Union[Any, Tuple[Any, int]]:
+def remove_role_from_machine(
+    current_user: User, role_id: int, machine_id: str
+) -> Union[Any, Tuple[Any, int]]:
     if not is_admin(current_user):
         return jsonify({"error": "Admin only"}), 403
     role = db.session.get(Role, role_id)

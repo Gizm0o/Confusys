@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from uuid import uuid4
 
-from sqlalchemy.orm import Mapped
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from api import db
@@ -27,7 +26,7 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
-    roles: Mapped[list[Role]] = db.relationship(
+    roles = db.relationship(
         "Role", secondary=user_roles, backref=db.backref("users", lazy="dynamic")
     )
 

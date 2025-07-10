@@ -188,7 +188,9 @@ def delete_machine(current_user: User, machine_id: str) -> Union[Any, Tuple[Any,
 
 @machine_bp.route("/<machine_id>/files", methods=["POST"])
 @token_required
-def upload_machine_file(current_user: User, machine_id: str) -> Union[Any, Tuple[Any, int]]:
+def upload_machine_file(
+    current_user: User, machine_id: str
+) -> Union[Any, Tuple[Any, int]]:
     try:
         uuid.UUID(str(machine_id))
     except ValueError:
@@ -225,7 +227,9 @@ def list_machine_files(current_user: User, machine_id: str) -> Any:
 
 @machine_bp.route("/<machine_id>/files/<file_id>", methods=["DELETE"])
 @token_required
-def delete_machine_file(current_user: User, machine_id: str, file_id: str) -> Union[Any, Tuple[Any, int]]:
+def delete_machine_file(
+    current_user: User, machine_id: str, file_id: str
+) -> Union[Any, Tuple[Any, int]]:
     try:
         uuid.UUID(str(machine_id))
         uuid.UUID(str(file_id))
