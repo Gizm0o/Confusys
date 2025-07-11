@@ -213,7 +213,7 @@ def upload_machine_file(
     machine_file = MachineFile(filename=filename, data=data, machine_id=machine.id)
     db.session.add(machine_file)
     db.session.commit()
-    
+
     # Scan the uploaded file with rules
     report_id = None
     try:
@@ -235,7 +235,7 @@ def upload_machine_file(
         # Log the error but don't fail the upload
         print(f"Scan failed for file {filename}: {e}")
         # Don't rollback the file upload, just continue without scan report
-    
+
     return (
         jsonify(
             {
@@ -324,12 +324,12 @@ def get_file_scan_reports(current_user: User, machine_id: str, file_id: str):
     machine_file = db.session.get(MachineFile, file_id)
     if not machine_file or machine_file.machine_id != machine_id:
         return jsonify({"error": "File not found or does not belong to machine"}), 404
-    
+
     # Check user access to the machine
     machine = db.session.get(Machine, machine_id)
     if not machine or not user_can_access_machine(current_user, machine):
         return jsonify({"error": "Machine not found or access denied"}), 404
-    
+
     reports = [
         {
             "id": r.id,

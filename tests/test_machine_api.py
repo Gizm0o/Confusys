@@ -318,14 +318,21 @@ def test_scan_report_permissions_and_edge_cases(client):
         headers={"Authorization": f"Bearer {user_token}"},
     )
     user_machine_id = resp.get_json()["machine_id"]
-    data = {"file": (io.BytesIO(b"this is a simple test file with no special content"), "file.txt")}
+    data = {
+        "file": (
+            io.BytesIO(b"this is a simple test file with no special content"),
+            "file.txt",
+        )
+    }
     resp = client.post(
         f"/machines/{user_machine_id}/files",
         headers={"Authorization": f"Bearer {user_token}"},
         content_type="multipart/form-data",
         data=data,
     )
-    assert resp.status_code == 201, f"Upload failed: {resp.status_code}, {resp.get_json()}"
+    assert (
+        resp.status_code == 201
+    ), f"Upload failed: {resp.status_code}, {resp.get_json()}"
     user_file_id = resp.get_json()["id"]
     # User fetches their own scan reports (should be empty findings)
     resp = client.get(
