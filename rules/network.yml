@@ -1,0 +1,26 @@
+rules:
+  - id: "NET001"
+    description: "Interface réseau sans adresse IP configurée."
+    search: "0.0.0.0"
+    regex: false
+    case_sensitive: false
+    severity: "Medium"
+    category: "Network"
+    tags: ["network", "ip"]
+    recommendation: "Assurez-vous que toutes les interfaces réseau nécessaires ont une adresse IP configurée."
+    example: |
+      ifconfig -a
+    reference: "https://www.cyberciti.biz/faq/linux-list-network-interfaces/"
+
+  - id: "NET002"
+    description: "Interface en mode promiscuité."
+    search: "PROMISC"
+    regex: false
+    case_sensitive: false
+    severity: "High"
+    category: "Network"
+    tags: ["promiscuous", "interface"]
+    recommendation: "Désactivez le mode promiscuité sauf nécessité."
+    example: |
+      ip link
+    reference: "https://www.cyberciti.biz/faq/linux-unix-bsd-appleosx-disable-promiscuous-mode/" 

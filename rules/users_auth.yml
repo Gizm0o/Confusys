@@ -1,0 +1,26 @@
+rules:
+  - id: "UA001"
+    description: "Utilisateur sans mot de passe."
+    search: ":*"
+    regex: true
+    case_sensitive: false
+    severity: "Critical"
+    category: "Authentication"
+    tags: ["user", "password"]
+    recommendation: "Assurez-vous que tous les comptes ont un mot de passe fort."
+    example: |
+      cat /etc/shadow
+    reference: "https://www.cyberciti.biz/faq/linux-check-user-passwords/"
+
+  - id: "UA002"
+    description: "Présence d'utilisateurs avec UID 0 autres que root."
+    search: ":0:0:"
+    regex: false
+    case_sensitive: false
+    severity: "High"
+    category: "Authentication"
+    tags: ["user", "uid0"]
+    recommendation: "Limitez l'UID 0 à l'utilisateur root uniquement."
+    example: |
+      cat /etc/passwd | grep ':0:0:'
+    reference: "https://www.cyberciti.biz/faq/linux-list-users-in-the-system/" 

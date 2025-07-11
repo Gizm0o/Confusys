@@ -1,0 +1,26 @@
+rules:
+  - id: "DBUS001"
+    description: "Service DBus système exposé à tous."
+    search: "<allow send_interface="
+    regex: false
+    case_sensitive: false
+    severity: "High"
+    category: "DBus"
+    tags: ["dbus", "exposed"]
+    recommendation: "Restreignez les permissions d'accès au bus système."
+    example: |
+      cat /etc/dbus-1/system.d/*.conf
+    reference: "https://dbus.freedesktop.org/doc/dbus-specification.html"
+
+  - id: "DBUS002"
+    description: "Absence de politique de sécurité DBus."
+    search: "<policy context="
+    regex: false
+    case_sensitive: false
+    severity: "Medium"
+    category: "DBus"
+    tags: ["dbus", "policy"]
+    recommendation: "Définissez des politiques de sécurité pour DBus."
+    example: |
+      cat /etc/dbus-1/system.d/*.conf
+    reference: "https://dbus.freedesktop.org/doc/dbus-specification.html" 

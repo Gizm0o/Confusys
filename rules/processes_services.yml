@@ -1,0 +1,26 @@
+rules:
+  - id: "PRC001"
+    description: "Service SSH autorise l'accès root."
+    search: "PermitRootLogin yes"
+    regex: false
+    case_sensitive: false
+    severity: "High"
+    category: "Services"
+    tags: ["ssh", "root"]
+    recommendation: "Désactivez l'accès root via SSH."
+    example: |
+      cat /etc/ssh/sshd_config | grep PermitRootLogin
+    reference: "https://www.ssh.com/academy/ssh/sshd_config"
+
+  - id: "PRC002"
+    description: "Service non sécurisé en écoute sur une interface publique."
+    search: ["0.0.0.0:21", "0.0.0.0:23"]
+    regex: false
+    case_sensitive: false
+    severity: "Critical"
+    category: "Services"
+    tags: ["public", "service"]
+    recommendation: "Limitez l'écoute des services sensibles à localhost ou à un réseau privé."
+    example: |
+      netstat -tuln
+    reference: "https://www.cyberciti.biz/faq/unix-linux-check-if-port-is-in-use-command/" 

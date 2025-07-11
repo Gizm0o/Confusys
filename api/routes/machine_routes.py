@@ -211,7 +211,9 @@ def upload_machine_file(
     db.session.commit()
     # Scan the uploaded file with rules
     try:
-        report = scan_file_with_rules(filename, data)
+        # Get language from request parameters or use system default
+        language = request.args.get('language')
+        report = scan_file_with_rules(filename, data, language=language)
         # Store the report in the database
         from uuid import uuid4
         scan_report = MachineFileScanReport(

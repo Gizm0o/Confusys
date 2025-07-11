@@ -1,0 +1,26 @@
+rules:
+  - id: "KP001"
+    description: "Paramètre kernel.sysrq activé."
+    search: "kernel.sysrq = 1"
+    regex: false
+    case_sensitive: false
+    severity: "High"
+    category: "Kernel Parameters"
+    tags: ["sysrq", "kernel"]
+    recommendation: "Désactivez kernel.sysrq sauf nécessité de debug."
+    example: |
+      sysctl kernel.sysrq
+    reference: "https://www.kernel.org/doc/html/latest/admin-guide/sysrq.html"
+
+  - id: "KP002"
+    description: "IP forwarding activé sans nécessité."
+    search: "net.ipv4.ip_forward = 1"
+    regex: false
+    case_sensitive: false
+    severity: "Medium"
+    category: "Kernel Parameters"
+    tags: ["ip_forward", "kernel"]
+    recommendation: "Désactivez l'IP forwarding si non utilisé."
+    example: |
+      sysctl net.ipv4.ip_forward
+    reference: "https://www.cyberciti.biz/faq/linux-ip-forwarding/" 

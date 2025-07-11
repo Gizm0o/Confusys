@@ -1,0 +1,26 @@
+rules:
+  - id: "OSK001"
+    description: "Le noyau n'est pas à jour."
+    search: "outdated kernel"
+    regex: false
+    case_sensitive: false
+    severity: "High"
+    category: "Kernel"
+    tags: ["kernel", "update"]
+    recommendation: "Mettez à jour le noyau pour corriger les vulnérabilités."
+    example: |
+      uname -a
+    reference: "https://www.cyberciti.biz/faq/howto-check-running-linux-kernel-version/"
+
+  - id: "OSK002"
+    description: "Le noyau est compilé sans support de sécurité (e.g. grsecurity, SELinux)."
+    search: ["CONFIG_GRKERNSEC is not set", "CONFIG_SECURITY_SELINUX is not set"]
+    regex: false
+    case_sensitive: false
+    severity: "Medium"
+    category: "Kernel"
+    tags: ["kernel", "security"]
+    recommendation: "Activez les options de sécurité du noyau lors de la compilation."
+    example: |
+      cat /proc/config.gz | zgrep SECURITY
+    reference: "https://www.kernel.org/doc/html/latest/admin-guide/security.html" 
