@@ -318,13 +318,14 @@ def test_scan_report_permissions_and_edge_cases(client):
         headers={"Authorization": f"Bearer {user_token}"},
     )
     user_machine_id = resp.get_json()["machine_id"]
-    data = {"file": (io.BytesIO(b"no match here"), "file.txt")}
+    data = {"file": (io.BytesIO(b"this is a simple test file with no special content"), "file.txt")}
     resp = client.post(
         f"/machines/{user_machine_id}/files",
         headers={"Authorization": f"Bearer {user_token}"},
         content_type="multipart/form-data",
         data=data,
     )
+    assert resp.status_code == 201, f"Upload failed: {resp.status_code}, {resp.get_json()}"
     user_file_id = resp.get_json()["id"]
     # User fetches their own scan reports (should be empty findings)
     resp = client.get(
@@ -408,6 +409,7 @@ def test_machine_upload_with_auto_scan(client):
     assert len(scan_results["findings"]) > 0
 
     # Test with invalid machine token
+    data = {"file": (io.BytesIO(dockerfile_content), "Dockerfile")}
     resp = client.post(
         f"/machines/{machine_id}/upload",
         headers={"Authorization": f"Bearer invalid_token"},
@@ -417,6 +419,7 @@ def test_machine_upload_with_auto_scan(client):
     assert resp.status_code == 401
 
     # Test with wrong machine ID
+    data = {"file": (io.BytesIO(dockerfile_content), "Dockerfile")}
     resp = client.post(
         "/machines/00000000-0000-0000-0000-000000000000/upload",
         headers={"Authorization": f"Bearer {machine_token}"},

@@ -72,6 +72,10 @@ def is_admin(user: User) -> bool:
 def user_can_access_machine(user: User, machine: Machine) -> bool:
     if is_admin(user):
         return True
+    # Users can access machines they created
+    if machine.user_id == user.id:
+        return True
+    # Users can access machines that share roles with them
     user_role_ids = {role.id for role in user.roles}
     machine_role_ids = {role.id for role in machine.roles}
     return bool(user_role_ids & machine_role_ids)
@@ -209,7 +213,9 @@ def upload_machine_file(
     machine_file = MachineFile(filename=filename, data=data, machine_id=machine.id)
     db.session.add(machine_file)
     db.session.commit()
+    
     # Scan the uploaded file with rules
+    report_id = None
     try:
         # Get language from request parameters or use system default
         language = request.args.get("language")
@@ -226,7 +232,10 @@ def upload_machine_file(
         db.session.commit()
         report_id = scan_report.id
     except Exception as e:
-        report_id = None
+        # Log the error but don't fail the upload
+        print(f"Scan failed for file {filename}: {e}")
+        # Don't rollback the file upload, just continue without scan report
+    
     return (
         jsonify(
             {
@@ -315,7 +324,12 @@ def get_file_scan_reports(current_user: User, machine_id: str, file_id: str):
     machine_file = db.session.get(MachineFile, file_id)
     if not machine_file or machine_file.machine_id != machine_id:
         return jsonify({"error": "File not found or does not belong to machine"}), 404
-    # Optionally, check user access to the machine
+    
+    # Check user access to the machine
+    machine = db.session.get(Machine, machine_id)
+    if not machine or not user_can_access_machine(current_user, machine):
+        return jsonify({"error": "Machine not found or access denied"}), 404
+    
     reports = [
         {
             "id": r.id,

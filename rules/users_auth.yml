@@ -1,7 +1,7 @@
 rules:
   - id: "UA001"
     description: "Utilisateur sans mot de passe."
-    search: ":*"
+    search: ":.*"
     regex: true
     case_sensitive: false
     severity: "Critical"

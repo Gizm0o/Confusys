@@ -27,6 +27,7 @@ machine_roles = db.Table(
 
 
 class MachineFile(db.Model):
+    __tablename__ = "machine_file"
     id = db.Column(
         db.String(36), primary_key=True, default=lambda: str(uuid4()), unique=True
     )
@@ -52,7 +53,7 @@ class Machine(db.Model):
         nullable=False,
         default=lambda: str(uuid4()).replace("-", ""),
     )
-    files = db.relationship("MachineFile", backref="machine", lazy=True)
+    files = db.relationship("MachineFile", backref="machine", lazy=True, cascade="all, delete-orphan")
     roles = db.relationship(
         "Role",
         secondary="machine_roles",
@@ -88,10 +89,10 @@ class MachineFileScanReport(db.Model):
         db.String(36), primary_key=True, default=lambda: str(uuid4()), unique=True
     )
     machine_file_id = db.Column(
-        db.String(36), db.ForeignKey("machinefile.id"), nullable=False
+        db.String(36), db.ForeignKey("machine_file.id", ondelete="CASCADE"), nullable=False
     )
-    findings = db.Column(JSONType, nullable=False)
+    findings = db.Column(db.JSON, nullable=False)
     scanned_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     machine_file = db.relationship(
-        "MachineFile", backref=db.backref("scan_reports", lazy=True)
+        "MachineFile", backref=db.backref("scan_reports", lazy=True, cascade="all, delete-orphan")
     )
