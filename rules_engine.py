@@ -1,7 +1,8 @@
-import os
-import yaml
-import re
 import locale
+import os
+import re
+
+import yaml
 
 RULES_DIR = os.path.join(os.path.dirname(__file__), "rules")
 

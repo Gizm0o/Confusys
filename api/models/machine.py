@@ -4,9 +4,10 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from api import db
-from sqlalchemy.dialects.sqlite import JSON as SQLiteJSON
 from sqlalchemy.dialects.postgresql import JSONB as PGJSONB
+from sqlalchemy.dialects.sqlite import JSON as SQLiteJSON
+
+from api import db
 
 try:
     JSONType = PGJSONB

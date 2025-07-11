@@ -1,7 +1,9 @@
 import io
+
 import pytest
+
 from api import create_app, db
-from api.models.machine import MachineFileScanReport, MachineFile
+from api.models.machine import MachineFile, MachineFileScanReport
 from api.models.user import Role, User
 
 

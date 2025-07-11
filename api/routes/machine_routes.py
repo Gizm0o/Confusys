@@ -303,8 +303,9 @@ def list_technologies() -> Any:
 @machine_bp.route("/<machine_id>/files/<file_id>/scan_reports", methods=["GET"])
 @token_required
 def get_file_scan_reports(current_user: User, machine_id: str, file_id: str):
-    from api.models.machine import MachineFile, MachineFileScanReport
     import uuid
+
+    from api.models.machine import MachineFile, MachineFileScanReport
 
     try:
         uuid.UUID(str(machine_id))
@@ -329,9 +330,10 @@ def get_file_scan_reports(current_user: User, machine_id: str, file_id: str):
 @machine_bp.route("/<machine_id>/scan_reports", methods=["GET"])
 @token_required
 def get_machine_scan_reports(current_user: User, machine_id: str):
-    from api.models.machine import Machine, MachineFileScanReport, MachineFile
     import uuid
     from datetime import datetime
+
+    from api.models.machine import Machine, MachineFile, MachineFileScanReport
 
     try:
         uuid.UUID(str(machine_id))
