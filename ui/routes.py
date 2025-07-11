@@ -5,6 +5,7 @@ from flask import current_app
 
 from . import ui_bp
 
+
 @ui_bp.route("/")
 def home():
     return redirect(url_for("ui.login"))
@@ -99,7 +100,7 @@ def dashboard():
             ]
     except Exception as e:
         machines = []
-    
+
     return render_template("dashboard.html", machines=machines)
 
 
