@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - ConfuSys{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Bienvenue, {{ session.username }} !</h2>
+    <a href="{{ url_for('ui.logout') }}" class="btn btn-outline-secondary">Déconnexion</a>
+  </div>
+
+  <div class="mb-4">
+    <a href="{{ url_for('ui.add_machine') }}" class="btn btn-success">+ Ajouter une machine</a>
+  </div>
+
+  {% if machines %}
+  <div class="table-responsive">
+    <table class="table table-striped table-hover">
+      <thead class="table-dark">
+        <tr>
+          <th>ID</th>
+          <th>Nom</th>
+          <th>Description</th>
+          <th>Rôles</th>
+          <th>Technologies</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in machines %}
+        <tr>
+          <td>{{ m.id }}</td>
+          <td>{{ m.name }}</td>
+          <td>{{ m.description }}</td>
+          <td>
+            {% if m.roles %}
+              {{ m.roles | join(", ") }}
+            {% else %}
+              <em>Aucun</em>
+            {% endif %}
+          </td>
+          <td>{{ m.technologies|join(', ') }}</td>
+          <td>
+              <a class="btn btn-sm btn-success"
+                  href="http://localhost:5000/machines/{{ m.id }}/script"
+                  target="_blank">Télécharger</a>
+
+              <form method="POST"
+                    action="{{ url_for('ui.delete_machine', machine_id=m.id) }}"
+                    style="display:inline;"
+                    onsubmit="return confirm('Supprimer cette machine ?');">
+                  <button type="submit" class="btn btn-sm btn-danger">Supprimer</button>
+              </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <div class="alert alert-info" role="alert">
+      Aucune machine disponible pour l'instant.
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
