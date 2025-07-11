@@ -46,7 +46,11 @@ def login() -> Tuple[Any, int]:
     if user and user.check_password(password):
         expiration = datetime.now(timezone.utc) + timedelta(hours=10)
         issued_at = datetime.now(timezone.utc)
-        payload = {"user_id": user.id, "exp": expiration, "iat": issued_at}
+        payload = {
+            "user_id": user.id,
+            "exp": expiration,
+            "iat": issued_at
+            }
         token = jwt.encode(payload, current_app.config["SECRET_KEY"], algorithm="HS256")
         return (
             jsonify(

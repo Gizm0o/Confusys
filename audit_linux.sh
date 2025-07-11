@@ -342,4 +342,42 @@ elif command -v cron >/dev/null 2>&1; then
   echo "@daily root find \"$TARGET_DIR\" -maxdepth 1 -type d -name 'AUDIT-*' -ctime +2 -exec rm -rf {} \\;" >> /etc/cron.d/audit-cleanup
 fi
 
+echo "Audit completed successfully."
+
+echo "Starting API upload..."
+
+# ====== CONFIG API LOGIN ======
+API_LOGIN_URL="http://localhost:5000/user/login"
+USERNAME="testuser"
+PASSWORD="testpassword"
+
+# Retrieve token from API
+LOGIN_RESPONSE=$(curl -s -X POST "$API_LOGIN_URL" \
+  -H "Content-Type: application/json" \
+  -d "{\"username\": \"$USERNAME\", \"password\": \"$PASSWORD\"}")
+
+# Extract token from the response
+TOKEN=$(echo "$LOGIN_RESPONSE" | grep -oP '"token"\s*:\s*"\K[^"]+')
+echo "Token retrieved $TOKEN"
+
+# Validate token
+if [ -z "$TOKEN" ]; then
+  echo "Failed to retrieve token from API. Response:"
+  echo "$LOGIN_RESPONSE"
+  exit 1
+fi
+
+# ====== CONFIG API URL ======
+MACHINE_ID="" # Set your machine ID here (need to be defined by the API)
+API_URL="http://localhost:5000/machines/$MACHINE_ID/files"
+
+# ====== Upload audit ======
+if [ -n "$API_URL" ] && [ -n "$TOKEN" ]; then
+  echo "Sending audit file to API at $API_URL"
+  curl -X POST "$API_URL" \
+    -H "Authorization: Bearer $TOKEN" \
+    -F "file=@$OUTFILE" \
+    --silent --show-error || echo "Failed to upload audit file to API."
+fi
+
 exit 0
