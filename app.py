@@ -212,8 +212,8 @@ def swagger_docs():
                             "in": "query",
                             "required": False,
                             "schema": {"type": "string", "example": "en"},
-                            "description": "Language code for localized findings (e.g., 'en', 'fr')."
-                        }
+                            "description": "Language code for localized findings (e.g., 'en', 'fr').",
+                        },
                     ],
                     "requestBody": {
                         "required": True,
@@ -224,7 +224,7 @@ def swagger_docs():
                                     "properties": {
                                         "file": {"type": "string", "format": "binary"}
                                     },
-                                    "required": ["file"]
+                                    "required": ["file"],
                                 }
                             }
                         },
@@ -242,36 +242,60 @@ def swagger_docs():
                                             "scan_results": {
                                                 "type": "object",
                                                 "properties": {
-                                                    "total_findings": {"type": "integer"},
-                                                    "critical_findings": {"type": "integer"},
-                                                    "high_findings": {"type": "integer"},
-                                                    "medium_findings": {"type": "integer"},
+                                                    "total_findings": {
+                                                        "type": "integer"
+                                                    },
+                                                    "critical_findings": {
+                                                        "type": "integer"
+                                                    },
+                                                    "high_findings": {
+                                                        "type": "integer"
+                                                    },
+                                                    "medium_findings": {
+                                                        "type": "integer"
+                                                    },
                                                     "findings": {
                                                         "type": "array",
                                                         "items": {
                                                             "type": "object",
                                                             "properties": {
-                                                                "id": {"type": "string"},
-                                                                "description": {"type": "string"},
-                                                                "severity": {"type": "string"},
-                                                                "recommendation": {"type": "string"},
-                                                                "category": {"type": "string"},
-                                                                "match": {"type": "string"},
-                                                                "language": {"type": "string"}
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
+                                                                "id": {
+                                                                    "type": "string"
+                                                                },
+                                                                "description": {
+                                                                    "type": "string"
+                                                                },
+                                                                "severity": {
+                                                                    "type": "string"
+                                                                },
+                                                                "recommendation": {
+                                                                    "type": "string"
+                                                                },
+                                                                "category": {
+                                                                    "type": "string"
+                                                                },
+                                                                "match": {
+                                                                    "type": "string"
+                                                                },
+                                                                "language": {
+                                                                    "type": "string"
+                                                                },
+                                                            },
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                        },
                                     }
                                 }
-                            }
+                            },
                         },
-                        "401": {"description": "Invalid machine token or machine not found"},
-                        "400": {"description": "No file part or invalid file"}
+                        "401": {
+                            "description": "Invalid machine token or machine not found"
+                        },
+                        "400": {"description": "No file part or invalid file"},
                     },
-                    "security": [{"Bearer": []}]
+                    "security": [{"Bearer": []}],
                 }
             },
             "/technologies": {

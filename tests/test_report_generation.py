@@ -4,9 +4,11 @@ from api import create_app, db
 from api.models.machine import MachineFileScanReport, MachineFile
 from api.models.user import Role, User
 
+
 def get_admin_token(client):
     resp = client.post("/user/login", json={"username": "admin", "password": "admin"})
     return resp.get_json()["token"]
+
 
 @pytest.fixture
 def client():
@@ -31,6 +33,7 @@ def client():
         yield app.test_client()
         db.session.remove()
         db.drop_all()
+
 
 def test_report_generation_user_upload(client):
     admin_token = get_admin_token(client)
@@ -65,9 +68,12 @@ def test_report_generation_user_upload(client):
     assert any(f["id"] == "SEC002" for f in findings)
     # Check DB directly
     with client.application.app_context():
-        scan_reports = MachineFileScanReport.query.filter_by(machine_file_id=file_id).all()
+        scan_reports = MachineFileScanReport.query.filter_by(
+            machine_file_id=file_id
+        ).all()
         assert len(scan_reports) == 1
         assert any(f["id"] == "SEC002" for f in scan_reports[0].findings)
+
 
 def test_report_generation_machine_upload(client):
     admin_token = get_admin_token(client)
@@ -96,6 +102,8 @@ def test_report_generation_machine_upload(client):
     assert any(f["id"] == "SEC002" for f in scan_results["findings"])
     # Check DB directly
     with client.application.app_context():
-        scan_reports = MachineFileScanReport.query.filter_by(machine_file_id=file_id).all()
+        scan_reports = MachineFileScanReport.query.filter_by(
+            machine_file_id=file_id
+        ).all()
         assert len(scan_reports) == 1
-        assert any(f["id"] == "SEC002" for f in scan_reports[0].findings) 
+        assert any(f["id"] == "SEC002" for f in scan_reports[0].findings)

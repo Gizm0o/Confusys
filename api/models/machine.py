@@ -83,8 +83,14 @@ class Rule(db.Model):
 
 
 class MachineFileScanReport(db.Model):
-    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()), unique=True)
-    machine_file_id = db.Column(db.String(36), db.ForeignKey("machinefile.id"), nullable=False)
+    id = db.Column(
+        db.String(36), primary_key=True, default=lambda: str(uuid4()), unique=True
+    )
+    machine_file_id = db.Column(
+        db.String(36), db.ForeignKey("machinefile.id"), nullable=False
+    )
     findings = db.Column(JSONType, nullable=False)
     scanned_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    machine_file = db.relationship("MachineFile", backref=db.backref("scan_reports", lazy=True))
+    machine_file = db.relationship(
+        "MachineFile", backref=db.backref("scan_reports", lazy=True)
+    )

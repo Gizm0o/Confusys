@@ -249,6 +249,7 @@ def test_scan_report_storage_and_endpoints(client):
     assert any(r["id"] == report_id for r in all_reports)
     # Filter by severity
     from datetime import datetime, timedelta
+
     now = datetime.utcnow().isoformat()
     resp = client.get(
         f"/machines/{machine_id}/scan_reports?severity=High",
@@ -336,6 +337,7 @@ def test_scan_report_permissions_and_edge_cases(client):
     assert reports[0]["findings"] == []
     # Non-existent file/machine
     import uuid
+
     fake_id = str(uuid.uuid4())
     resp = client.get(
         f"/machines/{fake_id}/files/{fake_id}/scan_reports",
@@ -377,7 +379,7 @@ def test_machine_upload_with_auto_scan(client):
     assert resp.status_code == 201
     machine_id = resp.get_json()["machine_id"]
     machine_token = resp.get_json()["token"]
-    
+
     # Upload file as machine (with content that matches a rule)
     dockerfile_content = b"FROM ubuntu\nUSER root\nRUN echo hi\n"
     data = {"file": (io.BytesIO(dockerfile_content), "Dockerfile")}
@@ -392,7 +394,7 @@ def test_machine_upload_with_auto_scan(client):
     assert "id" in result
     assert "filename" in result
     assert "scan_results" in result
-    
+
     # Check scan results
     scan_results = result["scan_results"]
     assert "total_findings" in scan_results
@@ -400,11 +402,11 @@ def test_machine_upload_with_auto_scan(client):
     assert "high_findings" in scan_results
     assert "medium_findings" in scan_results
     assert "findings" in scan_results
-    
+
     # Should have at least one finding (USER root rule)
     assert scan_results["total_findings"] > 0
     assert len(scan_results["findings"]) > 0
-    
+
     # Test with invalid machine token
     resp = client.post(
         f"/machines/{machine_id}/upload",
@@ -413,7 +415,7 @@ def test_machine_upload_with_auto_scan(client):
         data=data,
     )
     assert resp.status_code == 401
-    
+
     # Test with wrong machine ID
     resp = client.post(
         "/machines/00000000-0000-0000-0000-000000000000/upload",

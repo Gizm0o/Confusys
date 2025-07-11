@@ -212,10 +212,11 @@ def upload_machine_file(
     # Scan the uploaded file with rules
     try:
         # Get language from request parameters or use system default
-        language = request.args.get('language')
+        language = request.args.get("language")
         report = scan_file_with_rules(filename, data, language=language)
         # Store the report in the database
         from uuid import uuid4
+
         scan_report = MachineFileScanReport(
             id=str(uuid4()),
             machine_file_id=machine_file.id,
@@ -226,7 +227,16 @@ def upload_machine_file(
         report_id = scan_report.id
     except Exception as e:
         report_id = None
-    return jsonify({"id": machine_file.id, "filename": machine_file.filename, "report_id": report_id}), 201
+    return (
+        jsonify(
+            {
+                "id": machine_file.id,
+                "filename": machine_file.filename,
+                "report_id": report_id,
+            }
+        ),
+        201,
+    )
 
 
 @machine_bp.route("/<machine_id>/files", methods=["GET"])
@@ -295,6 +305,7 @@ def list_technologies() -> Any:
 def get_file_scan_reports(current_user: User, machine_id: str, file_id: str):
     from api.models.machine import MachineFile, MachineFileScanReport
     import uuid
+
     try:
         uuid.UUID(str(machine_id))
         uuid.UUID(str(file_id))
@@ -321,6 +332,7 @@ def get_machine_scan_reports(current_user: User, machine_id: str):
     from api.models.machine import Machine, MachineFileScanReport, MachineFile
     import uuid
     from datetime import datetime
+
     try:
         uuid.UUID(str(machine_id))
     except ValueError:
@@ -337,7 +349,9 @@ def get_machine_scan_reports(current_user: User, machine_id: str):
     severity = request.args.get("severity")
     rule_id = request.args.get("rule_id")
     # Build query
-    query = MachineFileScanReport.query.filter(MachineFileScanReport.machine_file_id.in_(file_ids))
+    query = MachineFileScanReport.query.filter(
+        MachineFileScanReport.machine_file_id.in_(file_ids)
+    )
     if start_date:
         try:
             dt = datetime.fromisoformat(start_date)
@@ -360,12 +374,14 @@ def get_machine_scan_reports(current_user: User, machine_id: str):
         if rule_id:
             findings = [f for f in findings if f.get("id") == rule_id]
         if findings:
-            filtered_reports.append({
-                "id": r.id,
-                "machine_file_id": r.machine_file_id,
-                "findings": findings,
-                "scanned_at": r.scanned_at.isoformat(),
-            })
+            filtered_reports.append(
+                {
+                    "id": r.id,
+                    "machine_file_id": r.machine_file_id,
+                    "findings": findings,
+                    "scanned_at": r.scanned_at.isoformat(),
+                }
+            )
     return jsonify(filtered_reports)
 
 
@@ -376,42 +392,43 @@ def machine_upload_file(machine_id: str) -> Union[Any, Tuple[Any, int]]:
         uuid.UUID(str(machine_id))
     except ValueError:
         return jsonify({"error": "Invalid machine ID format"}), 400
-    
+
     # Get machine token from Authorization header
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
         return jsonify({"error": "Machine token required"}), 401
-    
+
     machine_token = auth_header.split(" ")[1]
-    
+
     # Find machine by token
     machine = Machine.query.filter_by(token=machine_token).first()
     if not machine or machine.id != machine_id:
         return jsonify({"error": "Invalid machine token or machine not found"}), 401
-    
+
     # Check if file is provided
     if "file" not in request.files:
         return jsonify({"error": "No file part"}), 400
-    
+
     file = request.files["file"]
     if not file or not file.filename:
         return jsonify({"error": "No selected file"}), 400
-    
+
     filename = secure_filename(str(file.filename))
     data = file.read()
-    
+
     # Create machine file
     machine_file = MachineFile(filename=filename, data=data, machine_id=machine.id)
     db.session.add(machine_file)
     db.session.commit()
-    
+
     # Automatically scan the uploaded file with rules
     try:
         # Use system default language for machine uploads
         report = scan_file_with_rules(filename, data)
-        
+
         # Store the scan report
         from uuid import uuid4
+
         scan_report = MachineFileScanReport(
             id=str(uuid4()),
             machine_file_id=machine_file.id,
@@ -419,24 +436,40 @@ def machine_upload_file(machine_id: str) -> Union[Any, Tuple[Any, int]]:
         )
         db.session.add(scan_report)
         db.session.commit()
-        
+
         # Return scan results immediately
-        return jsonify({
-            "id": machine_file.id,
-            "filename": machine_file.filename,
-            "scan_results": {
-                "total_findings": len(report),
-                "critical_findings": len([f for f in report if f.get("severity") == "Critical"]),
-                "high_findings": len([f for f in report if f.get("severity") == "High"]),
-                "medium_findings": len([f for f in report if f.get("severity") == "Medium"]),
-                "findings": report
-            }
-        }), 201
-        
+        return (
+            jsonify(
+                {
+                    "id": machine_file.id,
+                    "filename": machine_file.filename,
+                    "scan_results": {
+                        "total_findings": len(report),
+                        "critical_findings": len(
+                            [f for f in report if f.get("severity") == "Critical"]
+                        ),
+                        "high_findings": len(
+                            [f for f in report if f.get("severity") == "High"]
+                        ),
+                        "medium_findings": len(
+                            [f for f in report if f.get("severity") == "Medium"]
+                        ),
+                        "findings": report,
+                    },
+                }
+            ),
+            201,
+        )
+
     except Exception as e:
         # Still save the file even if scan fails
-        return jsonify({
-            "id": machine_file.id,
-            "filename": machine_file.filename,
-            "scan_error": str(e)
-        }), 201
+        return (
+            jsonify(
+                {
+                    "id": machine_file.id,
+                    "filename": machine_file.filename,
+                    "scan_error": str(e),
+                }
+            ),
+            201,
+        )
