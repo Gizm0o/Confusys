@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Ajouter une machine - ConfuSys{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>Nouvelle Machine</h2>
+  <form method="POST">
+    <div class="mb-3">
+      <label for="name" class="form-label">Nom</label>
+      <input type="text" class="form-control" name="name" required>
+    </div>
+    <div class="mb-3">
+      <label for="description" class="form-label">Description</label>
+      <textarea class="form-control" name="description" rows="2"></textarea>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Rôles associés</label>
+      {% for r in roles %}
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="roles" value="{{ r.name }}" id="role_{{ r.id }}">
+        <label class="form-check-label" for="role_{{ r.id }}">{{ r.name }}</label>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Technologies</label>
+      {% for tech in technologies %}
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="technologies" value="{{ tech.key }}" id="tech_{{ tech.key }}">
+        <label class="form-check-label" for="tech_{{ tech.key }}">{{ tech.description }}</label>
+      </div>
+      {% endfor %}
+    </div>
+    <button type="submit" class="btn btn-primary">Ajouter</button>
+    <a href="{{ url_for('ui.dashboard') }}" class="btn btn-secondary">Annuler</a>
+  </form>
+</div>
+{% endblock %}

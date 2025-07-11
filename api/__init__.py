@@ -4,11 +4,13 @@ from typing import Any, Dict, Optional
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 
+from ui import ui_bp
+
 db = SQLAlchemy()
 
 
 def create_app(config: Optional[Dict[str, Any]] = None) -> Flask:
-    app = Flask(__name__)
+    app = Flask(__name__, template_folder="../templates", static_folder="../static")
 
     if config:
         app.config.update(config)
@@ -33,6 +35,8 @@ def create_app(config: Optional[Dict[str, Any]] = None) -> Flask:
     app.register_blueprint(machine_bp, url_prefix="/machines")
     app.register_blueprint(role_bp, url_prefix="/roles")
     app.register_blueprint(rule_bp, url_prefix="/rules")
+    # Register the UI blueprint
+    app.register_blueprint(ui_bp)
 
     return app
 
