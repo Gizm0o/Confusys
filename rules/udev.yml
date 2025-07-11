@@ -1,0 +1,26 @@
+rules:
+  - id: "UDEV001"
+    description: "Règle udev autorisant l'exécution de commandes arbitraires."
+    search: "RUN="
+    regex: false
+    case_sensitive: false
+    severity: "Critical"
+    category: "Udev"
+    tags: ["udev", "run"]
+    recommendation: "Limitez l'utilisation de RUN= dans les règles udev."
+    example: |
+      grep RUN= /etc/udev/rules.d/*
+    reference: "https://wiki.archlinux.org/title/Udev"
+
+  - id: "UDEV002"
+    description: "Absence de contrôle d'accès sur les règles udev."
+    search: "OWNER="
+    regex: false
+    case_sensitive: false
+    severity: "High"
+    category: "Udev"
+    tags: ["udev", "owner"]
+    recommendation: "Spécifiez OWNER= pour restreindre l'accès aux périphériques."
+    example: |
+      grep OWNER= /etc/udev/rules.d/*
+    reference: "https://wiki.archlinux.org/title/Udev" 

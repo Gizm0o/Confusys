@@ -1,0 +1,26 @@
+rules:
+  - id: "DSK001"
+    description: "Partition racine presque pleine."
+    search: "100%"
+    regex: false
+    case_sensitive: false
+    severity: "High"
+    category: "Disk"
+    tags: ["disk", "full"]
+    recommendation: "Libérez de l'espace disque ou augmentez la taille de la partition."
+    example: |
+      df -h
+    reference: "https://www.cyberciti.biz/tips/linux-find-out-disk-space.html"
+
+  - id: "DSK002"
+    description: "Système de fichiers non monté en lecture seule pour /boot."
+    search: "/boot"
+    regex: false
+    case_sensitive: false
+    severity: "Medium"
+    category: "Disk"
+    tags: ["filesystem", "boot"]
+    recommendation: "Montez /boot en lecture seule pour plus de sécurité."
+    example: |
+      mount | grep /boot
+    reference: "https://www.cyberciti.biz/tips/linux-mounting-hard-disk-partitions.html" 

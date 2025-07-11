@@ -1,0 +1,26 @@
+rules:
+  - id: "FW001"
+    description: "Aucune règle de pare-feu définie."
+    search: ["Chain INPUT (policy ACCEPT)", "Chain FORWARD (policy ACCEPT)"]
+    regex: false
+    case_sensitive: false
+    severity: "Critical"
+    category: "Firewall"
+    tags: ["firewall", "policy"]
+    recommendation: "Définissez des politiques par défaut restrictives pour le pare-feu."
+    example: |
+      iptables -L
+    reference: "https://wiki.centos.org/HowTos/Network/IPTables"
+
+  - id: "FW002"
+    description: "Ports critiques ouverts à tous."
+    search: ["ACCEPT     tcp  --  0.0.0.0/0", "ACCEPT     udp  --  0.0.0.0/0"]
+    regex: false
+    case_sensitive: false
+    severity: "High"
+    category: "Firewall"
+    tags: ["firewall", "open port"]
+    recommendation: "Restreignez l'accès aux ports critiques aux adresses IP de confiance."
+    example: |
+      iptables -L
+    reference: "https://wiki.centos.org/HowTos/Network/IPTables" 

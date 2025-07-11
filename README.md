@@ -60,76 +60,132 @@ The test suite covers:
 - Rule file management
 - API endpoint validation
 
-### CI/CD Pipeline
+## CI/CD Pipeline
 
-The GitHub Actions workflow (`.github/workflows/tests.yml`) provides comprehensive quality assurance:
+The GitHub Actions workflow (`.github/workflows/tests.yml`) runs on **every branch** for both push and pull request events. This ensures all code is tested regardless of branch.
 
-#### **Pipeline Stages**
+### Pipeline Stages
 1. **Code Quality Assurance**
    - Black (code formatting)
    - isort (import sorting)
    - flake8 (linting)
-   - mypy (type checking)
-
 2. **Security Scanning**
    - Bandit (Python security linting)
    - Safety (dependency vulnerability scanning)
    - Security reports as artifacts
-
 3. **Test Coverage Tracking**
    - pytest with coverage reporting
    - Codecov integration
    - HTML coverage reports
    - PostgreSQL integration tests
-
+   - **Test pipeline is split by stage:**
+     - API and upload flow (`test_machine_api.py`)
+     - Report generation and DB verification (`test_report_generation.py`)
 4. **Dependency Management**
    - Weekly dependency checks
    - Automated PR creation for updates
    - Dependabot integration
 
-#### **Triggers**
-- Push to main/master/develop branches
-- Pull requests to main/master/develop branches
-- Weekly scheduled dependency checks
+### Branch Triggers
+- **Push:** All branches (`branches: [ "**" ]`)
+- **Pull Requests:** All branches (`branches: [ "**" ]`)
+- **Scheduled:** Weekly dependency checks
 
-### Code Quality Tools
+---
 
-#### **Local Development**
-```bash
-# Install development tools
-pip install -r requirements.txt
+## Machine File Upload & Automatic Analysis
 
-# Format code
-black .
-isort .
+Machines can upload files directly and trigger automatic security analysis.
 
-# Lint code
-flake8 .
-mypy api/
+### Endpoint
+`POST /machines/<machine_id>/upload`
 
-# Security checks
-bandit -r api/
-safety check
+**Headers:**
+- `Authorization: Bearer <machine_token>`
 
-# Run tests with coverage
-pytest tests/ -v --cov=api --cov-report=html
+**Form Data:**
+- `file`: The file to upload
+
+**Response Example:**
+```json
+{
+  "id": "file_id",
+  "filename": "audit_results.tar.gz",
+  "scan_results": {
+    "total_findings": 5,
+    "critical_findings": 2,
+    "high_findings": 1,
+    "medium_findings": 2,
+    "findings": [
+      {
+        "id": "SEC002",
+        "description": "Container executed as root.",
+        "severity": "High",
+        "recommendation": "Use a non-root user in the Dockerfile.",
+        "category": "Privileges",
+        "match": "USER root"
+      }
+    ]
+  }
+}
 ```
 
-### Automated Features
+---
 
-#### **Dependabot** (`.github/dependabot.yml`)
-- Weekly dependency updates
-- Automatic PR creation
-- Configurable update policies
+## Multi-Language Rule Support
 
-#### **Scheduled Tasks**
-- **Weekly dependency checks**: Mondays at 2 AM
-- **Automated dependency PRs**: When updates are available
+Rules can be written in multiple languages. The engine will use the system language or a `language` parameter (e.g., `?language=en`).
 
-#### **Artifacts and Reports**
-- Test coverage reports (HTML and XML)
-- Security scan reports (JSON format)
-- Build cache for faster CI runs
+### Rule Example (YAML)
+```yaml
+- id: "SEC002"
+  description: "Conteneur exécuté en tant que root."
+  description_en: "Container executed as root."
+  search: "USER root"
+  severity: "High"
+  category: "Privileges"
+  category_en: "Privileges"
+  recommendation: "Utilisez un utilisateur non root dans le Dockerfile."
+  recommendation_en: "Use a non-root user in the Dockerfile."
+```
+
+### Usage
+- The engine will use `description_en` if `language=en`, otherwise fallback to `description` (French by default in examples).
+- Add more languages by adding fields like `description_es`, `recommendation_de`, etc.
+
+---
+
+## Rules File Structure
+
+- Each technology has its own YAML file in the `rules/` directory.
+- Each rule supports:
+  - `id`, `description`, `description_en`, `search`, `regex`, `case_sensitive`, `severity`, `category`, `category_en`, `tags`, `recommendation`, `recommendation_en`, `example`, `example_en`, `reference`
+- You can add as many languages as you want by suffixing the field with the language code.
+
+---
+
+## Test Structure
+
+- **API and upload flow:** `tests/test_machine_api.py`
+- **Report generation and DB verification:** `tests/test_report_generation.py`
+- Run tests for each stage:
+  ```bash
+  pytest tests/test_machine_api.py
+  pytest tests/test_report_generation.py
+  ```
+
+---
+
+## Example: Machine Upload with Language
+
+```bash
+curl -X POST http://localhost:5000/machines/<machine_id>/upload \
+  -H "Authorization: Bearer <machine_token>" \
+  -F "file=@audit_results.tar.gz" \
+  -G --data-urlencode "language=en"
+```
+
+---
 
 ## API Documentation
 

@@ -1,0 +1,26 @@
+rules:
+  - id: "UMASK001"
+    description: "Umask trop permissif."
+    search: "umask 000"
+    regex: false
+    case_sensitive: false
+    severity: "Critical"
+    category: "Umask"
+    tags: ["umask", "permissions"]
+    recommendation: "Utilisez une umask plus restrictive (ex: 027 ou 077)."
+    example: |
+      umask
+    reference: "https://www.cyberciti.biz/tips/understanding-linux-unix-umask-value-usage.html"
+
+  - id: "UMASK002"
+    description: "Variables d'environnement sensibles exposées."
+    search: ["AWS_SECRET", "DB_PASSWORD", "API_KEY"]
+    regex: false
+    case_sensitive: false
+    severity: "High"
+    category: "Environment"
+    tags: ["env", "secrets"]
+    recommendation: "Ne stockez pas de secrets dans les variables d'environnement."
+    example: |
+      env | grep PASSWORD
+    reference: "https://12factor.net/config" 

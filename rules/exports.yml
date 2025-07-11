@@ -1,0 +1,26 @@
+rules:
+  - id: "EXP001"
+    description: "Export NFS sans restriction d'accès."
+    search: "*(rw,sync,no_root_squash)"
+    regex: false
+    case_sensitive: false
+    severity: "Critical"
+    category: "NFS Exports"
+    tags: ["nfs", "exports", "no_root_squash"]
+    recommendation: "Restreignez les exports NFS à des hôtes spécifiques et évitez no_root_squash."
+    example: |
+      cat /etc/exports
+    reference: "https://wiki.archlinux.org/title/NFS"
+
+  - id: "EXP002"
+    description: "Export NFS en lecture-écriture pour tous."
+    search: "*(rw)"
+    regex: false
+    case_sensitive: false
+    severity: "High"
+    category: "NFS Exports"
+    tags: ["nfs", "exports", "rw"]
+    recommendation: "Privilégiez les exports en lecture seule ou restreignez les accès."
+    example: |
+      cat /etc/exports
+    reference: "https://wiki.archlinux.org/title/NFS" 

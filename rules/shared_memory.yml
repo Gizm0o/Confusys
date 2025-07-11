@@ -1,0 +1,26 @@
+rules:
+  - id: "SHM001"
+    description: "Segments de mémoire partagée non utilisés."
+    search: "dest"
+    regex: false
+    case_sensitive: false
+    severity: "Medium"
+    category: "Shared Memory"
+    tags: ["shared memory", "unused"]
+    recommendation: "Nettoyez les segments de mémoire partagée inutilisés pour éviter les fuites de ressources."
+    example: |
+      ipcs -m
+    reference: "https://www.cyberciti.biz/faq/linux-ipcs-command/"
+
+  - id: "SHM002"
+    description: "Permissions trop larges sur les segments de mémoire partagée."
+    search: "666"
+    regex: false
+    case_sensitive: false
+    severity: "High"
+    category: "Shared Memory"
+    tags: ["shared memory", "permissions"]
+    recommendation: "Restreignez les permissions des segments de mémoire partagée."
+    example: |
+      ipcs -m
+    reference: "https://www.cyberciti.biz/faq/linux-ipcs-command/" 

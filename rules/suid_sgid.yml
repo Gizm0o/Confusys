@@ -1,0 +1,26 @@
+rules:
+  - id: "SUID001"
+    description: "Fichiers SUID/SGID non nécessaires présents."
+    search: "/bin/"
+    regex: false
+    case_sensitive: false
+    severity: "High"
+    category: "SUID/SGID"
+    tags: ["suid", "sgid"]
+    recommendation: "Supprimez le bit SUID/SGID des fichiers non nécessaires."
+    example: |
+      find / -perm -4000 -o -perm -2000 -type f
+    reference: "https://www.cyberciti.biz/tips/find-linux-suid-sgid-files/"
+
+  - id: "SUID002"
+    description: "Fichiers SUID/SGID appartenant à root accessibles à tous."
+    search: "-rwsr-xr-x"
+    regex: false
+    case_sensitive: false
+    severity: "Critical"
+    category: "SUID/SGID"
+    tags: ["suid", "sgid", "root"]
+    recommendation: "Restreignez les permissions des fichiers SUID/SGID appartenant à root."
+    example: |
+      find / -user root -perm -4000 -exec ls -l {} \;
+    reference: "https://www.cyberciti.biz/tips/find-linux-suid-sgid-files/" 
