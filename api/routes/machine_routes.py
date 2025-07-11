@@ -367,3 +367,76 @@ def get_machine_scan_reports(current_user: User, machine_id: str):
                 "scanned_at": r.scanned_at.isoformat(),
             })
     return jsonify(filtered_reports)
+
+
+@machine_bp.route("/<machine_id>/upload", methods=["POST"])
+def machine_upload_file(machine_id: str) -> Union[Any, Tuple[Any, int]]:
+    """Endpoint for machines to upload files using their token"""
+    try:
+        uuid.UUID(str(machine_id))
+    except ValueError:
+        return jsonify({"error": "Invalid machine ID format"}), 400
+    
+    # Get machine token from Authorization header
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Machine token required"}), 401
+    
+    machine_token = auth_header.split(" ")[1]
+    
+    # Find machine by token
+    machine = Machine.query.filter_by(token=machine_token).first()
+    if not machine or machine.id != machine_id:
+        return jsonify({"error": "Invalid machine token or machine not found"}), 401
+    
+    # Check if file is provided
+    if "file" not in request.files:
+        return jsonify({"error": "No file part"}), 400
+    
+    file = request.files["file"]
+    if not file or not file.filename:
+        return jsonify({"error": "No selected file"}), 400
+    
+    filename = secure_filename(str(file.filename))
+    data = file.read()
+    
+    # Create machine file
+    machine_file = MachineFile(filename=filename, data=data, machine_id=machine.id)
+    db.session.add(machine_file)
+    db.session.commit()
+    
+    # Automatically scan the uploaded file with rules
+    try:
+        # Use system default language for machine uploads
+        report = scan_file_with_rules(filename, data)
+        
+        # Store the scan report
+        from uuid import uuid4
+        scan_report = MachineFileScanReport(
+            id=str(uuid4()),
+            machine_file_id=machine_file.id,
+            findings=report,
+        )
+        db.session.add(scan_report)
+        db.session.commit()
+        
+        # Return scan results immediately
+        return jsonify({
+            "id": machine_file.id,
+            "filename": machine_file.filename,
+            "scan_results": {
+                "total_findings": len(report),
+                "critical_findings": len([f for f in report if f.get("severity") == "Critical"]),
+                "high_findings": len([f for f in report if f.get("severity") == "High"]),
+                "medium_findings": len([f for f in report if f.get("severity") == "Medium"]),
+                "findings": report
+            }
+        }), 201
+        
+    except Exception as e:
+        # Still save the file even if scan fails
+        return jsonify({
+            "id": machine_file.id,
+            "filename": machine_file.filename,
+            "scan_error": str(e)
+        }), 201

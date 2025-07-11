@@ -364,3 +364,61 @@ def test_scan_report_permissions_and_edge_cases(client):
     reports = resp.get_json()
     assert len(reports) == 1
     assert any(f["id"] == "SEC002" for f in reports[0]["findings"])
+
+
+def test_machine_upload_with_auto_scan(client):
+    admin_token = get_admin_token(client)
+    # Create machine
+    resp = client.post(
+        "/machines",
+        json={"name": "autoscan", "description": "desc", "roles": []},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert resp.status_code == 201
+    machine_id = resp.get_json()["machine_id"]
+    machine_token = resp.get_json()["token"]
+    
+    # Upload file as machine (with content that matches a rule)
+    dockerfile_content = b"FROM ubuntu\nUSER root\nRUN echo hi\n"
+    data = {"file": (io.BytesIO(dockerfile_content), "Dockerfile")}
+    resp = client.post(
+        f"/machines/{machine_id}/upload",
+        headers={"Authorization": f"Bearer {machine_token}"},
+        content_type="multipart/form-data",
+        data=data,
+    )
+    assert resp.status_code == 201
+    result = resp.get_json()
+    assert "id" in result
+    assert "filename" in result
+    assert "scan_results" in result
+    
+    # Check scan results
+    scan_results = result["scan_results"]
+    assert "total_findings" in scan_results
+    assert "critical_findings" in scan_results
+    assert "high_findings" in scan_results
+    assert "medium_findings" in scan_results
+    assert "findings" in scan_results
+    
+    # Should have at least one finding (USER root rule)
+    assert scan_results["total_findings"] > 0
+    assert len(scan_results["findings"]) > 0
+    
+    # Test with invalid machine token
+    resp = client.post(
+        f"/machines/{machine_id}/upload",
+        headers={"Authorization": f"Bearer invalid_token"},
+        content_type="multipart/form-data",
+        data=data,
+    )
+    assert resp.status_code == 401
+    
+    # Test with wrong machine ID
+    resp = client.post(
+        "/machines/00000000-0000-0000-0000-000000000000/upload",
+        headers={"Authorization": f"Bearer {machine_token}"},
+        content_type="multipart/form-data",
+        data=data,
+    )
+    assert resp.status_code == 401
