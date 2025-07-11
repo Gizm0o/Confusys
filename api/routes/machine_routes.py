@@ -7,9 +7,10 @@ from flask import Blueprint, current_app, jsonify, request
 from werkzeug.utils import secure_filename
 
 from api import db
-from api.models.machine import Machine, MachineFile
+from api.models.machine import Machine, MachineFile, MachineFileScanReport
 from api.models.user import Role, User
 from api.script_templates import SCRIPT_BLOCKS, generate_audit_script
+from rules_engine import scan_file_with_rules
 
 TECH_DESCRIPTIONS = {
     "os_kernel": "Operating system and kernel information",
@@ -208,7 +209,22 @@ def upload_machine_file(
     machine_file = MachineFile(filename=filename, data=data, machine_id=machine.id)
     db.session.add(machine_file)
     db.session.commit()
-    return jsonify({"id": machine_file.id, "filename": machine_file.filename}), 201
+    # Scan the uploaded file with rules
+    try:
+        report = scan_file_with_rules(filename, data)
+        # Store the report in the database
+        from uuid import uuid4
+        scan_report = MachineFileScanReport(
+            id=str(uuid4()),
+            machine_file_id=machine_file.id,
+            findings=report,
+        )
+        db.session.add(scan_report)
+        db.session.commit()
+        report_id = scan_report.id
+    except Exception as e:
+        report_id = None
+    return jsonify({"id": machine_file.id, "filename": machine_file.filename, "report_id": report_id}), 201
 
 
 @machine_bp.route("/<machine_id>/files", methods=["GET"])
@@ -270,3 +286,82 @@ def list_technologies() -> Any:
             for k in SCRIPT_BLOCKS.keys()
         ]
     )
+
+
+@machine_bp.route("/<machine_id>/files/<file_id>/scan_reports", methods=["GET"])
+@token_required
+def get_file_scan_reports(current_user: User, machine_id: str, file_id: str):
+    from api.models.machine import MachineFile, MachineFileScanReport
+    import uuid
+    try:
+        uuid.UUID(str(machine_id))
+        uuid.UUID(str(file_id))
+    except ValueError:
+        return jsonify({"error": "Invalid ID format"}), 400
+    machine_file = db.session.get(MachineFile, file_id)
+    if not machine_file or machine_file.machine_id != machine_id:
+        return jsonify({"error": "File not found or does not belong to machine"}), 404
+    # Optionally, check user access to the machine
+    reports = [
+        {
+            "id": r.id,
+            "findings": r.findings,
+            "scanned_at": r.scanned_at.isoformat(),
+        }
+        for r in machine_file.scan_reports
+    ]
+    return jsonify(reports)
+
+
+@machine_bp.route("/<machine_id>/scan_reports", methods=["GET"])
+@token_required
+def get_machine_scan_reports(current_user: User, machine_id: str):
+    from api.models.machine import Machine, MachineFileScanReport, MachineFile
+    import uuid
+    from datetime import datetime
+    try:
+        uuid.UUID(str(machine_id))
+    except ValueError:
+        return jsonify({"error": "Invalid machine ID format"}), 400
+    machine = db.session.get(Machine, machine_id)
+    if not machine or not user_can_access_machine(current_user, machine):
+        return jsonify({"error": "Machine not found or access denied"}), 404
+    # Get all files for this machine
+    files = machine.files
+    file_ids = [f.id for f in files]
+    # Query params
+    start_date = request.args.get("start_date")
+    end_date = request.args.get("end_date")
+    severity = request.args.get("severity")
+    rule_id = request.args.get("rule_id")
+    # Build query
+    query = MachineFileScanReport.query.filter(MachineFileScanReport.machine_file_id.in_(file_ids))
+    if start_date:
+        try:
+            dt = datetime.fromisoformat(start_date)
+            query = query.filter(MachineFileScanReport.scanned_at >= dt)
+        except Exception:
+            return jsonify({"error": "Invalid start_date format, use ISO format"}), 400
+    if end_date:
+        try:
+            dt = datetime.fromisoformat(end_date)
+            query = query.filter(MachineFileScanReport.scanned_at <= dt)
+        except Exception:
+            return jsonify({"error": "Invalid end_date format, use ISO format"}), 400
+    reports = query.all()
+    # Filter by severity and rule_id in findings
+    filtered_reports = []
+    for r in reports:
+        findings = r.findings
+        if severity:
+            findings = [f for f in findings if f.get("severity") == severity]
+        if rule_id:
+            findings = [f for f in findings if f.get("id") == rule_id]
+        if findings:
+            filtered_reports.append({
+                "id": r.id,
+                "machine_file_id": r.machine_file_id,
+                "findings": findings,
+                "scanned_at": r.scanned_at.isoformat(),
+            })
+    return jsonify(filtered_reports)

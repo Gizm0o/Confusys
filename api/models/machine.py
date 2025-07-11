@@ -5,6 +5,13 @@ from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from api import db
+from sqlalchemy.dialects.sqlite import JSON as SQLiteJSON
+from sqlalchemy.dialects.postgresql import JSONB as PGJSONB
+
+try:
+    JSONType = PGJSONB
+except ImportError:
+    JSONType = SQLiteJSON
 
 if TYPE_CHECKING:
     from api.models.user import Role
@@ -73,3 +80,11 @@ class Rule(db.Model):
         "Role", secondary=rule_roles, backref=db.backref("rules", lazy="dynamic")
     )
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class MachineFileScanReport(db.Model):
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()), unique=True)
+    machine_file_id = db.Column(db.String(36), db.ForeignKey("machinefile.id"), nullable=False)
+    findings = db.Column(JSONType, nullable=False)
+    scanned_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    machine_file = db.relationship("MachineFile", backref=db.backref("scan_reports", lazy=True))
