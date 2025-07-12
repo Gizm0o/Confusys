@@ -30,12 +30,13 @@ def wait_for_database():
     with app.app_context():
         db.create_all()
         print("Tables created successfully!")
-
-        # Initialize database with admin user and role
-        print("Initializing database with admin user...")
+        print("Initializing with default admin user...")
         init_db(app)
         print("Database initialization complete!")
-
+    
+    # Start the API server
+    print("Starting API server...")
+    app.run(debug=True, port=5000, host="0.0.0.0")
 
 if __name__ == "__main__":
     wait_for_database()

@@ -9,7 +9,10 @@
   </div>
 
   <div class="mb-4">
-    <a href="{{ url_for('ui.add_machine') }}" class="btn btn-success">+ Ajouter une machine</a>
+    <a href="{{ url_for('add_machine') }}" class="btn btn-success">+ Ajouter une machine</a>
+    <a href="{{ url_for('rules') }}" class="btn btn-info ms-2">
+      <i class="bi bi-shield"></i> Gérer les Règles
+    </a>
   </div>
 
   {% if machines %}
@@ -55,7 +58,7 @@
                   target="_blank">Télécharger</a>
 
               <form method="POST"
-                    action="{{ url_for('ui.delete_machine', machine_id=m.id) }}"
+                    action="{{ url_for('delete_machine', machine_id=m.id) }}"
                     style="display:inline;"
                     onsubmit="return confirm('Supprimer cette machine ?');">
                   <button type="submit" class="btn btn-sm btn-danger">Supprimer</button>

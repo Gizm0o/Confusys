@@ -15,3 +15,4 @@ mypy==1.7.1
 bandit==1.8.6
 safety==3.6.0
 PyYAML
+requests==2.31.0

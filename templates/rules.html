@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+
+{% block title %}Gestion des Règles - ConfuSys{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Gestion des Règles de Sécurité</h2>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> Retour au Dashboard
+    </a>
+  </div>
+
+  <!-- Alert Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <div class="row">
+    <!-- Upload Section -->
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">
+            <i class="bi bi-upload"></i> Upload de Fichier YAML
+          </h5>
+        </div>
+        <div class="card-body">
+          <form method="POST" enctype="multipart/form-data" id="uploadForm">
+            <div class="mb-3">
+              <label for="ruleFile" class="form-label">Fichier YAML</label>
+              <input type="file" class="form-control" id="ruleFile" name="file" accept=".yml,.yaml" required>
+              <div class="form-text">Sélectionnez un fichier YAML contenant vos règles de sécurité.</div>
+            </div>
+            
+            <div class="mb-3">
+              <label for="description" class="form-label">Description</label>
+              <input type="text" class="form-control" id="description" name="description" placeholder="Description des règles" required>
+            </div>
+            
+            <div class="mb-3">
+              <label for="roles" class="form-label">Rôles</label>
+              <select class="form-select" id="roles" name="roles" multiple>
+                {% for role in roles %}
+                  <option value="{{ role.name }}">{{ role.name }}</option>
+                {% endfor %}
+              </select>
+              <div class="form-text">Sélectionnez les rôles qui peuvent accéder à ces règles.</div>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-upload"></i> Uploader
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Text Input Section -->
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">
+            <i class="bi bi-pencil"></i> Saisie Directe
+          </h5>
+        </div>
+        <div class="card-body">
+          <form method="POST" id="textForm">
+            <div class="mb-3">
+              <label for="ruleContent" class="form-label">Contenu YAML</label>
+              <textarea class="form-control" id="ruleContent" name="content" rows="15" placeholder="rules:
+  - id: 'RULE001'
+    description: 'Description de la règle'
+    search: 'pattern'
+    regex: false
+    case_sensitive: false
+    severity: 'Medium'
+    category: 'Security'
+    tags: ['tag1', 'tag2']
+    recommendation: 'Recommandation de sécurité'
+    example: |
+      Exemple de commande
+    reference: 'https://example.com'" required></textarea>
+              <div class="form-text">Saisissez directement le contenu YAML de vos règles.</div>
+            </div>
+            
+            <div class="mb-3">
+              <label for="textDescription" class="form-label">Description</label>
+              <input type="text" class="form-control" id="textDescription" name="description" placeholder="Description des règles" required>
+            </div>
+            
+            <div class="mb-3">
+              <label for="textRoles" class="form-label">Rôles</label>
+              <select class="form-select" id="textRoles" name="roles" multiple>
+                {% for role in roles %}
+                  <option value="{{ role.name }}">{{ role.name }}</option>
+                {% endfor %}
+              </select>
+              <div class="form-text">Sélectionnez les rôles qui peuvent accéder à ces règles.</div>
+            </div>
+            
+            <button type="submit" class="btn btn-success">
+              <i class="bi bi-check"></i> Valider et Sauvegarder
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Validation Results -->
+  <div id="validationResults" class="mt-4" style="display: none;">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="card-title mb-0">
+          <i class="bi bi-shield-check"></i> Résultats de Validation
+        </h5>
+      </div>
+      <div class="card-body">
+        <div id="validationContent"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Existing Rules -->
+  {% if rules %}
+  <div class="mt-4">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="card-title mb-0">
+          <i class="bi bi-list"></i> Règles Existantes
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-striped table-hover">
+            <thead class="table-dark">
+              <tr>
+                <th>Nom du Fichier</th>
+                <th>Description</th>
+                <th>Rôles</th>
+                <th>Propriétaire</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for rule in rules %}
+              <tr>
+                <td>{{ rule.filename }}</td>
+                <td>{{ rule.description }}</td>
+                <td>
+                  {% if rule.roles %}
+                    {{ rule.roles | join(", ") }}
+                  {% else %}
+                    <em>Aucun</em>
+                  {% endif %}
+                </td>
+                <td>{{ rule.owner }}</td>
+                <td>
+                                     <a class="btn btn-sm btn-info" href="{{ url_for('download_rule', rule_id=rule.id) }}" target="_blank">
+                    <i class="bi bi-download"></i> Télécharger
+                  </a>
+                                     <form method="POST" action="{{ url_for('delete_rule', rule_id=rule.id) }}" style="display:inline;" onsubmit="return confirm('Supprimer cette règle ?');">
+                    <button type="submit" class="btn btn-sm btn-danger">
+                      <i class="bi bi-trash"></i> Supprimer
+                    </button>
+                  </form>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const uploadForm = document.getElementById('uploadForm');
+  const textForm = document.getElementById('textForm');
+  const ruleContent = document.getElementById('ruleContent');
+  const validationResults = document.getElementById('validationResults');
+  const validationContent = document.getElementById('validationContent');
+
+  // Handle file upload form
+  uploadForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(uploadForm);
+    
+    fetch('/rules/upload', {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        showAlert('Règles uploadées avec succès !', 'success');
+        uploadForm.reset();
+        location.reload();
+      } else {
+        showAlert(data.error || 'Erreur lors de l\'upload', 'danger');
+      }
+    })
+    .catch(error => {
+      showAlert('Erreur de connexion', 'danger');
+    });
+  });
+
+  // Handle text input form
+  textForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(textForm);
+    
+    fetch('/rules/validate', {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.valid) {
+        // If valid, save the rules
+        fetch('/rules/save', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => response.json())
+        .then(saveData => {
+          if (saveData.success) {
+            showAlert('Règles sauvegardées avec succès !', 'success');
+            textForm.reset();
+            location.reload();
+          } else {
+            showAlert(saveData.error || 'Erreur lors de la sauvegarde', 'danger');
+          }
+        });
+      } else {
+        // Show validation errors
+        showValidationResults(data.errors);
+      }
+    })
+    .catch(error => {
+      showAlert('Erreur de connexion', 'danger');
+    });
+  });
+
+  // Real-time validation for text input
+  ruleContent.addEventListener('input', function() {
+    if (ruleContent.value.trim()) {
+      const formData = new FormData();
+      formData.append('content', ruleContent.value);
+      
+      fetch('/rules/validate', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.valid) {
+          hideValidationResults();
+        } else {
+          showValidationResults(data.errors);
+        }
+      });
+    } else {
+      hideValidationResults();
+    }
+  });
+
+  function showValidationResults(errors) {
+    validationContent.innerHTML = '';
+    
+    if (errors.length === 0) {
+      validationContent.innerHTML = '<div class="alert alert-success"><i class="bi bi-check-circle"></i> Format YAML valide !</div>';
+    } else {
+      let html = '<div class="alert alert-danger"><h6><i class="bi bi-exclamation-triangle"></i> Erreurs de validation :</h6><ul>';
+      errors.forEach(error => {
+        html += `<li>${error}</li>`;
+      });
+      html += '</ul></div>';
+      validationContent.innerHTML = html;
+    }
+    
+    validationResults.style.display = 'block';
+  }
+
+  function hideValidationResults() {
+    validationResults.style.display = 'none';
+  }
+
+  function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    const container = document.querySelector('.container');
+    container.insertBefore(alertDiv, container.firstChild);
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+      if (alertDiv.parentNode) {
+        alertDiv.remove();
+      }
+    }, 5000);
+  }
+});
+</script>
+{% endblock %} 

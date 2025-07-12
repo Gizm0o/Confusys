@@ -6,9 +6,9 @@
   <h1 class="display-4">403</h1>
   <p class="lead">Vous n'avez pas la permission d'accéder à cette ressource.</p>
     {% if session.token %}
-        <a href="{{ url_for('ui.dashboard') }}" class="btn btn-primary mt-3">Retour au dashboard</a>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-primary mt-3">Retour au dashboard</a>
     {% else %}
-        <a href="{{ url_for('ui.login') }}" class="btn btn-primary mt-3">Retour à la base</a>
+        <a href="{{ url_for('login') }}" class="btn btn-primary mt-3">Retour à la base</a>
     {% endif %}
 </div>
 {% endblock %}

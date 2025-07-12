@@ -4,40 +4,42 @@ services:
   db:
     image: postgres:15
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: confusys_db
+      POSTGRES_DB: confusys
+      POSTGRES_USER: confusys
+      POSTGRES_PASSWORD: confusys
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d confusys_db"]
-      interval: 5s
+      test: ["CMD-SHELL", "pg_isready -U confusys -d confusys"]
+      interval: 10s
       timeout: 5s
       retries: 5
 
-  web:
+  api:
     build: .
-    command: >
-      sh -c "
-        python wait_for_db.py &&
-        echo 'Creating database tables...' &&
-        python -c 'from api import create_app, db; app = create_app(); app.app_context().push(); db.create_all()' &&
-        echo 'Starting Flask app...' &&
-        flask run --host=0.0.0.0 --port=5000
-      "
-    environment:
-      FLASK_ENV: development
-      DATABASE_URL: postgresql://user:password@db:5432/confusys_db
-      SECRET_KEY: your-secret-key
     ports:
       - "5000:5000"
+    environment:
+      - DOCKER_ENV=true
+      - API_URL=http://localhost:5000
     depends_on:
       db:
         condition: service_healthy
     volumes:
-      - .:/app
+      - ./instance:/app/instance
+    command: python wait_for_db.py
+
+  frontend:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - API_URL=http://api:5000
+    depends_on:
+      - api
+    command: python frontend.py
 
 volumes:
-  pgdata: 
+  postgres_data: 
