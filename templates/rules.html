@@ -55,6 +55,38 @@
               <div class="form-text">Sélectionnez les rôles qui peuvent accéder à ces règles.</div>
             </div>
             
+            <div class="mb-3">
+              <label for="technologies" class="form-label">Technologies</label>
+              <select class="form-select" id="technologies" name="technologies" multiple>
+                <option value="os_kernel">OS & Kernel - Operating system and kernel information</option>
+                <option value="memory_cpu">Memory & CPU - Memory and CPU statistics</option>
+                <option value="disk_filesystems">Disk & Filesystems - Disk usage and filesystem details</option>
+                <option value="processes_services">Processes & Services - Running processes and system services</option>
+                <option value="network">Network - Network interfaces and connections</option>
+                <option value="routing">Routing - Network routing tables</option>
+                <option value="users_auth">Users & Auth - User accounts and authentication configuration</option>
+                <option value="history">History - User login and shell history</option>
+                <option value="packages">Packages - Installed software packages</option>
+                <option value="docker">Docker - Docker container information</option>
+                <option value="lxc">LXC - LXC container information</option>
+                <option value="selinux">SELinux - SELinux security status</option>
+                <option value="firewall">Firewall - Firewall and packet filter rules</option>
+                <option value="kernel_params">Kernel Params - Kernel parameters (sysctl)</option>
+                <option value="kernel_vuln">Kernel Vuln - Kernel CPU vulnerability status</option>
+                <option value="shared_memory">Shared Memory - Shared memory segments</option>
+                <option value="udev">udev - udev rules and device events</option>
+                <option value="dbus">DBUS - DBUS system information</option>
+                <option value="suid_sgid">SUID/SGID - SUID/SGID files</option>
+                <option value="world_writable">World Writable - World-writable files</option>
+                <option value="capabilities">Capabilities - File capabilities</option>
+                <option value="env_umask">Env & Umask - Environment variables and umask</option>
+                <option value="exports">Exports - NFS exported filesystems</option>
+                <option value="rpc">RPC - RPC services</option>
+                <option value="x_access">X Access - X server access controls</option>
+              </select>
+              <div class="form-text">Sélectionnez les technologies auxquelles ces règles s'appliquent.</div>
+            </div>
+            
             <button type="submit" class="btn btn-primary">
               <i class="bi bi-upload"></i> Uploader
             </button>
@@ -106,6 +138,38 @@
               <div class="form-text">Sélectionnez les rôles qui peuvent accéder à ces règles.</div>
             </div>
             
+            <div class="mb-3">
+              <label for="textTechnologies" class="form-label">Technologies</label>
+              <select class="form-select" id="textTechnologies" name="technologies" multiple>
+                <option value="os_kernel">OS & Kernel - Operating system and kernel information</option>
+                <option value="memory_cpu">Memory & CPU - Memory and CPU statistics</option>
+                <option value="disk_filesystems">Disk & Filesystems - Disk usage and filesystem details</option>
+                <option value="processes_services">Processes & Services - Running processes and system services</option>
+                <option value="network">Network - Network interfaces and connections</option>
+                <option value="routing">Routing - Network routing tables</option>
+                <option value="users_auth">Users & Auth - User accounts and authentication configuration</option>
+                <option value="history">History - User login and shell history</option>
+                <option value="packages">Packages - Installed software packages</option>
+                <option value="docker">Docker - Docker container information</option>
+                <option value="lxc">LXC - LXC container information</option>
+                <option value="selinux">SELinux - SELinux security status</option>
+                <option value="firewall">Firewall - Firewall and packet filter rules</option>
+                <option value="kernel_params">Kernel Params - Kernel parameters (sysctl)</option>
+                <option value="kernel_vuln">Kernel Vuln - Kernel CPU vulnerability status</option>
+                <option value="shared_memory">Shared Memory - Shared memory segments</option>
+                <option value="udev">udev - udev rules and device events</option>
+                <option value="dbus">DBUS - DBUS system information</option>
+                <option value="suid_sgid">SUID/SGID - SUID/SGID files</option>
+                <option value="world_writable">World Writable - World-writable files</option>
+                <option value="capabilities">Capabilities - File capabilities</option>
+                <option value="env_umask">Env & Umask - Environment variables and umask</option>
+                <option value="exports">Exports - NFS exported filesystems</option>
+                <option value="rpc">RPC - RPC services</option>
+                <option value="x_access">X Access - X server access controls</option>
+              </select>
+              <div class="form-text">Sélectionnez les technologies auxquelles ces règles s'appliquent.</div>
+            </div>
+            
             <button type="submit" class="btn btn-success">
               <i class="bi bi-check"></i> Valider et Sauvegarder
             </button>
@@ -145,6 +209,7 @@
               <tr>
                 <th>Nom du Fichier</th>
                 <th>Description</th>
+                <th>Technologies</th>
                 <th>Rôles</th>
                 <th>Propriétaire</th>
                 <th>Actions</th>
@@ -155,6 +220,15 @@
               <tr>
                 <td>{{ rule.filename }}</td>
                 <td>{{ rule.description }}</td>
+                <td>
+                  {% if rule.technologies %}
+                    {% for tech in rule.technologies %}
+                      <span class="badge bg-info me-1">{{ tech }}</span>
+                    {% endfor %}
+                  {% else %}
+                    <em>Aucune</em>
+                  {% endif %}
+                </td>
                 <td>
                   {% if rule.roles %}
                     {{ rule.roles | join(", ") }}
