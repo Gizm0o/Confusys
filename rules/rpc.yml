@@ -1,0 +1,26 @@
+rules:
+  - id: "RPC001"
+    description: "Service RPC sans authentification."
+    search: "noauth"
+    regex: false
+    case_sensitive: false
+    severity: "High"
+    category: "RPC"
+    tags: ["rpc", "noauth"]
+    recommendation: "Activez l'authentification sur les services RPC."
+    example: |
+      rpcinfo -p
+    reference: "https://www.cyberciti.biz/faq/linux-unix-rpcinfo-command/"
+
+  - id: "RPC002"
+    description: "Ports RPC ouverts à tous."
+    search: "0.0.0.0"
+    regex: false
+    case_sensitive: false
+    severity: "Medium"
+    category: "RPC"
+    tags: ["rpc", "open port"]
+    recommendation: "Restreignez les ports RPC aux réseaux de confiance."
+    example: |
+      rpcinfo -p
+    reference: "https://www.cyberciti.biz/faq/linux-unix-rpcinfo-command/" 

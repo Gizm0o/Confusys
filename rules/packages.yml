@@ -1,0 +1,26 @@
+rules:
+  - id: "PKG001"
+    description: "Paquets obsolètes installés."
+    search: "obsolete"
+    regex: false
+    case_sensitive: false
+    severity: "High"
+    category: "Packages"
+    tags: ["package", "obsolete"]
+    recommendation: "Mettez à jour ou supprimez les paquets obsolètes."
+    example: |
+      dpkg -l | grep obsolete
+    reference: "https://www.cyberciti.biz/faq/howto-list-all-installed-packages-in-linux/"
+
+  - id: "PKG002"
+    description: "Présence de paquets non signés."
+    search: "unsigned"
+    regex: false
+    case_sensitive: false
+    severity: "Medium"
+    category: "Packages"
+    tags: ["package", "unsigned"]
+    recommendation: "N'installez que des paquets signés provenant de sources fiables."
+    example: |
+      rpm -qpi --qf '%{SIGPGP:pgpsig}\n' package.rpm
+    reference: "https://www.cyberciti.biz/faq/howto-verify-rpm-signature/" 

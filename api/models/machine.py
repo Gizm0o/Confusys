@@ -4,7 +4,15 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
+from sqlalchemy.dialects.postgresql import JSONB as PGJSONB
+from sqlalchemy.dialects.sqlite import JSON as SQLiteJSON
+
 from api import db
+
+try:
+    JSONType = PGJSONB
+except ImportError:
+    JSONType = SQLiteJSON
 
 if TYPE_CHECKING:
     from api.models.user import Role
@@ -19,6 +27,7 @@ machine_roles = db.Table(
 
 
 class MachineFile(db.Model):
+    __tablename__ = "machine_file"
     id = db.Column(
         db.String(36), primary_key=True, default=lambda: str(uuid4()), unique=True
     )
@@ -44,7 +53,9 @@ class Machine(db.Model):
         nullable=False,
         default=lambda: str(uuid4()).replace("-", ""),
     )
-    files = db.relationship("MachineFile", backref="machine", lazy=True)
+    files = db.relationship(
+        "MachineFile", backref="machine", lazy=True, cascade="all, delete-orphan"
+    )
     roles = db.relationship(
         "Role",
         secondary="machine_roles",
@@ -73,3 +84,20 @@ class Rule(db.Model):
         "Role", secondary=rule_roles, backref=db.backref("rules", lazy="dynamic")
     )
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class MachineFileScanReport(db.Model):
+    id = db.Column(
+        db.String(36), primary_key=True, default=lambda: str(uuid4()), unique=True
+    )
+    machine_file_id = db.Column(
+        db.String(36),
+        db.ForeignKey("machine_file.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    findings = db.Column(db.JSON, nullable=False)
+    scanned_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    machine_file = db.relationship(
+        "MachineFile",
+        backref=db.backref("scan_reports", lazy=True, cascade="all, delete-orphan"),
+    )

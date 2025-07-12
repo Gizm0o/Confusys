@@ -195,6 +195,109 @@ def swagger_docs():
                     },
                 }
             },
+            "/machines/{machine_id}/upload": {
+                "post": {
+                    "summary": "Upload a file as a machine and trigger automatic analysis",
+                    "tags": ["Machines"],
+                    "description": "Machines can upload files directly using their machine token. The file is automatically analyzed and a scan report is returned. Supports multi-language findings via the 'language' query parameter (e.g., ?language=en).",
+                    "parameters": [
+                        {
+                            "name": "machine_id",
+                            "in": "path",
+                            "required": True,
+                            "schema": {"type": "string"},
+                        },
+                        {
+                            "name": "language",
+                            "in": "query",
+                            "required": False,
+                            "schema": {"type": "string", "example": "en"},
+                            "description": "Language code for localized findings (e.g., 'en', 'fr').",
+                        },
+                    ],
+                    "requestBody": {
+                        "required": True,
+                        "content": {
+                            "multipart/form-data": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "file": {"type": "string", "format": "binary"}
+                                    },
+                                    "required": ["file"],
+                                }
+                            }
+                        },
+                    },
+                    "responses": {
+                        "201": {
+                            "description": "File uploaded and analyzed successfully",
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "id": {"type": "string"},
+                                            "filename": {"type": "string"},
+                                            "scan_results": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "total_findings": {
+                                                        "type": "integer"
+                                                    },
+                                                    "critical_findings": {
+                                                        "type": "integer"
+                                                    },
+                                                    "high_findings": {
+                                                        "type": "integer"
+                                                    },
+                                                    "medium_findings": {
+                                                        "type": "integer"
+                                                    },
+                                                    "findings": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "id": {
+                                                                    "type": "string"
+                                                                },
+                                                                "description": {
+                                                                    "type": "string"
+                                                                },
+                                                                "severity": {
+                                                                    "type": "string"
+                                                                },
+                                                                "recommendation": {
+                                                                    "type": "string"
+                                                                },
+                                                                "category": {
+                                                                    "type": "string"
+                                                                },
+                                                                "match": {
+                                                                    "type": "string"
+                                                                },
+                                                                "language": {
+                                                                    "type": "string"
+                                                                },
+                                                            },
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    }
+                                }
+                            },
+                        },
+                        "401": {
+                            "description": "Invalid machine token or machine not found"
+                        },
+                        "400": {"description": "No file part or invalid file"},
+                    },
+                    "security": [{"Bearer": []}],
+                }
+            },
             "/technologies": {
                 "get": {
                     "summary": "List available technologies for audit scripts",

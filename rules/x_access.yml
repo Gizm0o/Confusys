@@ -1,0 +1,26 @@
+rules:
+  - id: "XACC001"
+    description: "Contrôle d'accès X11 trop permissif."
+    search: "xhost +"
+    regex: false
+    case_sensitive: false
+    severity: "Critical"
+    category: "X Access"
+    tags: ["x11", "access"]
+    recommendation: "N'utilisez pas 'xhost +' qui désactive tout contrôle d'accès."
+    example: |
+      xhost +
+    reference: "https://wiki.archlinux.org/title/Xhost"
+
+  - id: "XACC002"
+    description: "Absence de restriction sur les cookies X11."
+    search: "xauth list"
+    regex: false
+    case_sensitive: false
+    severity: "High"
+    category: "X Access"
+    tags: ["x11", "xauth"]
+    recommendation: "Utilisez xauth pour restreindre l'accès X11."
+    example: |
+      xauth list
+    reference: "https://wiki.archlinux.org/title/Xauth" 

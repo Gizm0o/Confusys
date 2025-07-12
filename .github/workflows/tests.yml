@@ -2,9 +2,9 @@ name: Tests
 
 on:
   push:
-    branches: [ main, master, develop ]
+    branches: [ "**" ]
   pull_request:
-    branches: [ main, master, develop ]
+    branches: [ "**" ]
   schedule:
     # Run dependency checks weekly
     - cron: '0 2 * * 1'

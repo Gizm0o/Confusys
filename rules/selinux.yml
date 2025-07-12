@@ -1,0 +1,26 @@
+rules:
+  - id: "SEL001"
+    description: "SELinux désactivé."
+    search: "SELINUX=disabled"
+    regex: false
+    case_sensitive: false
+    severity: "Critical"
+    category: "SELinux"
+    tags: ["selinux", "disabled"]
+    recommendation: "Activez SELinux pour renforcer la sécurité du système."
+    example: |
+      cat /etc/selinux/config
+    reference: "https://wiki.centos.org/HowTos/SELinux"
+
+  - id: "SEL002"
+    description: "SELinux en mode permissif."
+    search: "SELINUX=permissive"
+    regex: false
+    case_sensitive: false
+    severity: "High"
+    category: "SELinux"
+    tags: ["selinux", "permissive"]
+    recommendation: "Utilisez le mode enforcing pour une meilleure sécurité."
+    example: |
+      cat /etc/selinux/config
+    reference: "https://wiki.centos.org/HowTos/SELinux" 

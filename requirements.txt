@@ -14,3 +14,4 @@ flake8==6.1.0
 mypy==1.7.1
 bandit==1.8.6
 safety==3.6.0
+PyYAML

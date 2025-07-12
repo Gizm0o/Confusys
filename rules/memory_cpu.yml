@@ -1,0 +1,26 @@
+rules:
+  - id: "MEM001"
+    description: "Utilisation de la mémoire swap excessive."
+    search: "Swap:"
+    regex: false
+    case_sensitive: false
+    severity: "Medium"
+    category: "Memory"
+    tags: ["swap", "memory"]
+    recommendation: "Vérifiez la configuration de la swap et optimisez l'utilisation de la mémoire RAM."
+    example: |
+      free -m
+    reference: "https://www.linuxatemyram.com/"
+
+  - id: "MEM002"
+    description: "Processus consommant trop de mémoire."
+    search: "RES"
+    regex: false
+    case_sensitive: false
+    severity: "High"
+    category: "Memory"
+    tags: ["memory", "process"]
+    recommendation: "Identifiez et optimisez les processus gourmands en mémoire."
+    example: |
+      ps aux --sort=-%mem | head
+    reference: "https://www.cyberciti.biz/faq/linux-which-process-is-using-how-much-ram/" 

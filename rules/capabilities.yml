@@ -1,0 +1,26 @@
+rules:
+  - id: "CAP001"
+    description: "Fichiers avec des capabilities non nécessaires."
+    search: "cap_net_raw"
+    regex: false
+    case_sensitive: false
+    severity: "High"
+    category: "Capabilities"
+    tags: ["capabilities", "net_raw"]
+    recommendation: "Retirez les capabilities non nécessaires des fichiers exécutables."
+    example: |
+      getcap -r /
+    reference: "https://man7.org/linux/man-pages/man7/capabilities.7.html"
+
+  - id: "CAP002"
+    description: "Fichiers avec capabilities sur des chemins sensibles."
+    search: ["/usr/bin/", "/sbin/"]
+    regex: false
+    case_sensitive: false
+    severity: "Medium"
+    category: "Capabilities"
+    tags: ["capabilities", "paths"]
+    recommendation: "Vérifiez les capabilities sur les chemins critiques."
+    example: |
+      getcap -r /usr/bin/
+    reference: "https://man7.org/linux/man-pages/man7/capabilities.7.html" 

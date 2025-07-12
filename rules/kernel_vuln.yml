@@ -1,0 +1,26 @@
+rules:
+  - id: "KVUL001"
+    description: "Présence de vulnérabilités CPU non corrigées."
+    search: "Vulnerable"
+    regex: false
+    case_sensitive: false
+    severity: "Critical"
+    category: "Kernel Vulnerabilities"
+    tags: ["vulnerability", "cpu"]
+    recommendation: "Mettez à jour le noyau et appliquez les correctifs de sécurité CPU."
+    example: |
+      cat /sys/devices/system/cpu/vulnerabilities/*
+    reference: "https://www.kernel.org/doc/html/latest/admin-guide/hw-vuln/index.html"
+
+  - id: "KVUL002"
+    description: "Aucune vérification de vulnérabilité CPU."
+    search: "No such file or directory"
+    regex: false
+    case_sensitive: false
+    severity: "Medium"
+    category: "Kernel Vulnerabilities"
+    tags: ["vulnerability", "cpu"]
+    recommendation: "Vérifiez que le système supporte la détection des vulnérabilités CPU."
+    example: |
+      ls /sys/devices/system/cpu/vulnerabilities/
+    reference: "https://www.kernel.org/doc/html/latest/admin-guide/hw-vuln/index.html" 

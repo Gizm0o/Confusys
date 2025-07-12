@@ -1,0 +1,26 @@
+rules:
+  - id: "HIST001"
+    description: "Commandes sensibles trouvées dans l'historique."
+    search: ["passwd", "sudo su", "curl http"]
+    regex: false
+    case_sensitive: false
+    severity: "Medium"
+    category: "History"
+    tags: ["history", "sensitive"]
+    recommendation: "Vérifiez l'usage de commandes sensibles dans l'historique et sensibilisez les utilisateurs."
+    example: |
+      history | grep passwd
+    reference: "https://www.cyberciti.biz/faq/linux-shell-command-history/"
+
+  - id: "HIST002"
+    description: "Absence de fichier d'historique pour root."
+    search: ".bash_history"
+    regex: false
+    case_sensitive: false
+    severity: "High"
+    category: "History"
+    tags: ["history", "root"]
+    recommendation: "Assurez-vous que l'historique des commandes root est conservé pour l'audit."
+    example: |
+      ls -la /root/.bash_history
+    reference: "https://www.cyberciti.biz/faq/linux-shell-command-history/" 

@@ -1,0 +1,26 @@
+rules:
+  - id: "ROUT001"
+    description: "Route par défaut vers une passerelle non sécurisée."
+    search: "0.0.0.0"
+    regex: false
+    case_sensitive: false
+    severity: "High"
+    category: "Routing"
+    tags: ["default route", "gateway"]
+    recommendation: "Vérifiez que la passerelle par défaut est sécurisée et attendue."
+    example: |
+      netstat -rn
+    reference: "https://www.cyberciti.biz/faq/linux-unix-bsd-appleosx-check-default-gateway/"
+
+  - id: "ROUT002"
+    description: "Présence de routes statiques non documentées."
+    search: "static"
+    regex: false
+    case_sensitive: false
+    severity: "Medium"
+    category: "Routing"
+    tags: ["static route", "routing"]
+    recommendation: "Documentez toutes les routes statiques pour la maintenance et la sécurité."
+    example: |
+      ip route show
+    reference: "https://www.cyberciti.biz/faq/linux-static-route/" 

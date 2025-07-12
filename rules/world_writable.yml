@@ -1,0 +1,26 @@
+rules:
+  - id: "WW001"
+    description: "Fichiers ou répertoires world-writable détectés."
+    search: "drwxrwxrwx"
+    regex: false
+    case_sensitive: false
+    severity: "High"
+    category: "World Writable"
+    tags: ["world writable", "permissions"]
+    recommendation: "Évitez les permissions 777 sur les fichiers et répertoires."
+    example: |
+      find / -perm -2 ! -type l -exec ls -ld {} \;
+    reference: "https://www.cyberciti.biz/tips/linux-world-writable-files/"
+
+  - id: "WW002"
+    description: "Fichiers world-writable dans /etc ou /var."
+    search: ["/etc/", "/var/"]
+    regex: false
+    case_sensitive: false
+    severity: "Critical"
+    category: "World Writable"
+    tags: ["world writable", "etc", "var"]
+    recommendation: "Restreignez les permissions dans /etc et /var."
+    example: |
+      find /etc /var -perm -2 ! -type l -exec ls -ld {} \;
+    reference: "https://www.cyberciti.biz/tips/linux-world-writable-files/" 

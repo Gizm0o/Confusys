@@ -1,0 +1,198 @@
+rules:
+  - id: "SEC001"
+    description: "Conteneur exécuté avec privilèges élevés (--privileged)."
+    description_en: "Container executed with elevated privileges (--privileged)."
+    search: "--privileged"
+    regex: false
+    case_sensitive: false
+    severity: "Critical"
+    category: "Privileges"
+    category_en: "Privileges"
+    tags: ["privileged", "security"]
+    recommendation: "Évitez '--privileged' et limitez les capacités avec '--cap-drop'."
+    recommendation_en: "Avoid '--privileged' and limit capabilities with '--cap-drop'."
+    example: |
+      docker run --privileged myimage
+    example_en: |
+      docker run --privileged myimage
+    reference: "https://docs.docker.com/engine/reference/run/#runtime-privilege-and-linux-capabilities"
+
+  - id: "SEC002"
+    description: "Conteneur exécuté en tant que root."
+    description_en: "Container executed as root."
+    search: "USER root"
+    regex: false
+    case_sensitive: false
+    severity: "High"
+    category: "Privileges"
+    category_en: "Privileges"
+    tags: ["root", "user"]
+    recommendation: "Utilisez un utilisateur non root dans le Dockerfile."
+    recommendation_en: "Use a non-root user in the Dockerfile."
+    example: |
+      USER root
+    example_en: |
+      USER root
+    reference: "https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#user"
+
+  - id: "SEC003"
+    description: "Montage du socket Docker dans un conteneur (accès total à l'hôte)."
+    description_en: "Docker socket mounted in container (total host access)."
+    search: "-v /var/run/docker.sock:/var/run/docker.sock"
+    regex: false
+    case_sensitive: false
+    severity: "Critical"
+    category: "Privileges"
+    category_en: "Privileges"
+    tags: ["docker.sock", "host"]
+    recommendation: "Évitez de monter le socket Docker, utilisez des API REST sécurisées."
+    recommendation_en: "Avoid mounting the Docker socket, use secure REST APIs."
+    example: |
+      docker run -v /var/run/docker.sock:/var/run/docker.sock myimage
+    example_en: |
+      docker run -v /var/run/docker.sock:/var/run/docker.sock myimage
+    reference: "https://docs.docker.com/engine/security/"
+
+  - id: "STORAGE001"
+    description: "Secrets stockés en clair dans l'image Docker."
+    description_en: "Secrets stored in plain text in Docker image."
+    search: ["ENV PASSWORD=", "ENV SECRET=", "ENV TOKEN="]
+    regex: false
+    case_sensitive: false
+    severity: "High"
+    category: "Storage"
+    category_en: "Storage"
+    tags: ["secrets", "env"]
+    recommendation: "Utilisez Docker Secrets ou des variables d'environnement sécurisées."
+    recommendation_en: "Use Docker Secrets or secure environment variables."
+    example: |
+      ENV PASSWORD=mysecret
+    example_en: |
+      ENV PASSWORD=mysecret
+    reference: "https://docs.docker.com/engine/swarm/secrets/"
+
+  - id: "STORAGE002"
+    description: "Utilisation d'un volume non sécurisé contenant des fichiers sensibles."
+    description_en: "Use of insecure volume containing sensitive files."
+    search: ["-v /etc/passwd:/etc/passwd", "-v /etc/shadow:/etc/shadow"]
+    regex: false
+    case_sensitive: false
+    severity: "Critical"
+    category: "Storage"
+    category_en: "Storage"
+    tags: ["volumes", "sensitive"]
+    recommendation: "N'exposez pas de fichiers système critiques dans les volumes Docker."
+    recommendation_en: "Do not expose critical system files in Docker volumes."
+    example: |
+      docker run -v /etc/passwd:/etc/passwd myimage
+    example_en: |
+      docker run -v /etc/passwd:/etc/passwd myimage
+    reference: "https://docs.docker.com/storage/volumes/"
+
+  - id: "STORAGE003"
+    description: "Utilisation de volumes anonymes (risque de perte de données)."
+    description_en: "Use of anonymous volumes (data loss risk)."
+    search: "VOLUME /data"
+    regex: false
+    case_sensitive: false
+    severity: "Medium"
+    category: "Storage"
+    category_en: "Storage"
+    tags: ["volumes", "anonymous"]
+    recommendation: "Spécifiez des volumes nommés pour éviter la perte de données."
+    recommendation_en: "Specify named volumes to avoid data loss."
+    example: |
+      VOLUME /data
+    example_en: |
+      VOLUME /data
+    reference: "https://docs.docker.com/storage/volumes/"
+
+  - id: "NETWORK001"
+    description: "Conteneur exposé publiquement sans restriction."
+    description_en: "Container exposed publicly without restriction."
+    search: "-p 0.0.0.0:"
+    regex: false
+    case_sensitive: false
+    severity: "Critical"
+    category: "Network"
+    category_en: "Network"
+    tags: ["exposure", "public", "network"]
+    recommendation: "Utilisez '127.0.0.1' pour restreindre l'accès."
+    recommendation_en: "Use '127.0.0.1' to restrict access."
+    example: |
+      docker run -p 0.0.0.0:80:80 myimage
+    example_en: |
+      docker run -p 0.0.0.0:80:80 myimage
+    reference: "https://docs.docker.com/config/containers/container-networking/"
+
+  - id: "NETWORK002"
+    description: "Utilisation du mode host (accès direct à l'hôte)."
+    description_en: "Use of host mode (direct host access)."
+    search: "--network=host"
+    regex: false
+    case_sensitive: false
+    severity: "High"
+    category: "Network"
+    category_en: "Network"
+    tags: ["host", "network"]
+    recommendation: "Évitez '--network=host' sauf si absolument nécessaire."
+    recommendation_en: "Avoid '--network=host' unless absolutely necessary."
+    example: |
+      docker run --network=host myimage
+    example_en: |
+      docker run --network=host myimage
+    reference: "https://docs.docker.com/network/host/"
+
+  - id: "NETWORK003"
+    description: "Conteneur sans politique de redémarrage."
+    description_en: "Container without restart policy."
+    search: "--restart=always"
+    regex: false
+    case_sensitive: false
+    severity: "Medium"
+    category: "Network"
+    category_en: "Network"
+    tags: ["restart", "policy"]
+    recommendation: "Utilisez '--restart=unless-stopped' pour plus de contrôle."
+    recommendation_en: "Use '--restart=unless-stopped' for better control."
+    example: |
+      docker run --restart=always myimage
+    example_en: |
+      docker run --restart=always myimage
+    reference: "https://docs.docker.com/config/containers/start-containers-automatically/"
+
+  - id: "PERF001"
+    description: "Absence de limites CPU/Mémoire pour un conteneur."
+    description_en: "No CPU/Memory limits for container."
+    search: "docker run"
+    regex: false
+    case_sensitive: false
+    severity: "Medium"
+    category: "Performance"
+    category_en: "Performance"
+    tags: ["resources", "limits"]
+    recommendation: "Ajoutez '--memory' et '--cpus' pour limiter la consommation de ressources."
+    recommendation_en: "Add '--memory' and '--cpus' to limit resource consumption."
+    example: |
+      docker run --memory=512m --cpus=1 myimage
+    example_en: |
+      docker run --memory=512m --cpus=1 myimage
+    reference: "https://docs.docker.com/config/containers/resource_constraints/"
+
+  - id: "PERF002"
+    description: "Utilisation d'images 'latest' (risque de versions non contrôlées)."
+    description_en: "Use of 'latest' images (uncontrolled version risk)."
+    search: "image: .*:latest"
+    regex: true
+    case_sensitive: false
+    severity: "Medium"
+    category: "Performance"
+    category_en: "Performance"
+    tags: ["latest", "tag"]
+    recommendation: "Spécifiez une version précise pour éviter les mises à jour involontaires."
+    recommendation_en: "Specify an exact version to avoid involuntary updates."
+    example: |
+      image: myimage:latest
+    example_en: |
+      image: myimage:latest
+    reference: "https://docs.docker.com/develop/develop-images/tagging-images/"

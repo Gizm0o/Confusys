@@ -1,0 +1,26 @@
+rules:
+  - id: "LXC001"
+    description: "Conteneur LXC exécuté en mode privilégié."
+    search: "lxc.privileged = 1"
+    regex: false
+    case_sensitive: false
+    severity: "Critical"
+    category: "LXC"
+    tags: ["lxc", "privileged"]
+    recommendation: "Évitez d'exécuter des conteneurs LXC en mode privilégié."
+    example: |
+      lxc.privileged = 1
+    reference: "https://linuxcontainers.org/lxc/security/"
+
+  - id: "LXC002"
+    description: "Absence de limitation de ressources pour le conteneur LXC."
+    search: ["lxc.cgroup.memory.limit_in_bytes =", "lxc.cgroup.cpu.shares ="]
+    regex: false
+    case_sensitive: false
+    severity: "Medium"
+    category: "LXC"
+    tags: ["lxc", "resources"]
+    recommendation: "Définissez des limites de ressources pour chaque conteneur."
+    example: |
+      lxc.cgroup.memory.limit_in_bytes = 512M
+    reference: "https://linuxcontainers.org/lxc/documentation/" 

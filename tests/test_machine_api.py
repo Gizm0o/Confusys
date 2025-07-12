@@ -204,3 +204,233 @@ def test_machine_access_control(client):
         f"/machines/{other_id}", headers={"Authorization": f"Bearer {token}"}
     )
     assert resp.status_code in (403, 404)
+
+
+def test_scan_report_storage_and_endpoints(client):
+    admin_token = get_admin_token(client)
+    # Create machine
+    resp = client.post(
+        "/machines",
+        json={"name": "machscan", "description": "desc", "roles": []},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert resp.status_code == 201
+    machine_id = resp.get_json()["machine_id"]
+    # Upload file with content that matches a rule (simulate docker rule)
+    dockerfile_content = b"FROM ubuntu\nUSER root\nRUN echo hi\n"
+    data = {"file": (io.BytesIO(dockerfile_content), "Dockerfile")}
+    resp = client.post(
+        f"/machines/{machine_id}/files",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        content_type="multipart/form-data",
+        data=data,
+    )
+    assert resp.status_code == 201
+    file_id = resp.get_json()["id"]
+    report_id = resp.get_json()["report_id"]
+    assert report_id is not None
+    # Fetch scan reports for the file
+    resp = client.get(
+        f"/machines/{machine_id}/files/{file_id}/scan_reports",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert resp.status_code == 200
+    reports = resp.get_json()
+    assert len(reports) == 1
+    findings = reports[0]["findings"]
+    assert any(f["id"] == "SEC002" for f in findings)  # USER root rule
+    # Fetch all scan reports for the machine
+    resp = client.get(
+        f"/machines/{machine_id}/scan_reports",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert resp.status_code == 200
+    all_reports = resp.get_json()
+    assert any(r["id"] == report_id for r in all_reports)
+    # Filter by severity
+    from datetime import datetime, timedelta
+
+    now = datetime.utcnow().isoformat()
+    resp = client.get(
+        f"/machines/{machine_id}/scan_reports?severity=High",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert resp.status_code == 200
+    filtered = resp.get_json()
+    assert all(any(f["severity"] == "High" for f in r["findings"]) for r in filtered)
+    # Filter by rule_id
+    resp = client.get(
+        f"/machines/{machine_id}/scan_reports?rule_id=SEC002",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert resp.status_code == 200
+    filtered = resp.get_json()
+    assert all(any(f["id"] == "SEC002" for f in r["findings"]) for r in filtered)
+    # Filter by date
+    resp = client.get(
+        f"/machines/{machine_id}/scan_reports?start_date={now}",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert resp.status_code == 200
+    # Should be empty since start_date is now
+    assert resp.get_json() == []
+
+
+def test_scan_report_permissions_and_edge_cases(client):
+    # Setup admin and user
+    client.post(
+        "/user/register",
+        json={"username": "user", "email": "user@example.com", "password": "pass"},
+    )
+    resp = client.post("/user/login", json={"username": "user", "password": "pass"})
+    user_token = resp.get_json()["token"]
+    admin_token = get_admin_token(client)
+    # Admin creates a machine and uploads a file
+    resp = client.post(
+        "/machines",
+        json={"name": "machperms", "description": "desc", "roles": []},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    machine_id = resp.get_json()["machine_id"]
+    data = {"file": (io.BytesIO(b"USER root\n"), "Dockerfile")}
+    resp = client.post(
+        f"/machines/{machine_id}/files",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        content_type="multipart/form-data",
+        data=data,
+    )
+    file_id = resp.get_json()["id"]
+    # User tries to fetch scan reports for admin's machine/file
+    resp = client.get(
+        f"/machines/{machine_id}/files/{file_id}/scan_reports",
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert resp.status_code in (403, 404)
+    resp = client.get(
+        f"/machines/{machine_id}/scan_reports",
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert resp.status_code in (403, 404)
+    # User creates their own machine and uploads a file
+    resp = client.post(
+        "/machines",
+        json={"name": "machuser", "description": "desc", "roles": []},
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    user_machine_id = resp.get_json()["machine_id"]
+    data = {
+        "file": (
+            io.BytesIO(b"this is a simple test file with no special content"),
+            "file.txt",
+        )
+    }
+    resp = client.post(
+        f"/machines/{user_machine_id}/files",
+        headers={"Authorization": f"Bearer {user_token}"},
+        content_type="multipart/form-data",
+        data=data,
+    )
+    assert (
+        resp.status_code == 201
+    ), f"Upload failed: {resp.status_code}, {resp.get_json()}"
+    user_file_id = resp.get_json()["id"]
+    # User fetches their own scan reports (should be empty findings)
+    resp = client.get(
+        f"/machines/{user_machine_id}/files/{user_file_id}/scan_reports",
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert resp.status_code == 200
+    reports = resp.get_json()
+    assert len(reports) == 1
+    assert reports[0]["findings"] == []
+    # Non-existent file/machine
+    import uuid
+
+    fake_id = str(uuid.uuid4())
+    resp = client.get(
+        f"/machines/{fake_id}/files/{fake_id}/scan_reports",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert resp.status_code in (403, 404)
+    resp = client.get(
+        f"/machines/{fake_id}/scan_reports",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert resp.status_code in (403, 404)
+    # Multiple reports per file (simulate by uploading the same file twice)
+    data = {"file": (io.BytesIO(b"USER root\n"), "Dockerfile")}
+    resp = client.post(
+        f"/machines/{user_machine_id}/files",
+        headers={"Authorization": f"Bearer {user_token}"},
+        content_type="multipart/form-data",
+        data=data,
+    )
+    new_file_id = resp.get_json()["id"]
+    resp = client.get(
+        f"/machines/{user_machine_id}/files/{new_file_id}/scan_reports",
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert resp.status_code == 200
+    reports = resp.get_json()
+    assert len(reports) == 1
+    assert any(f["id"] == "SEC002" for f in reports[0]["findings"])
+
+
+def test_machine_upload_with_auto_scan(client):
+    admin_token = get_admin_token(client)
+    # Create machine
+    resp = client.post(
+        "/machines",
+        json={"name": "autoscan", "description": "desc", "roles": []},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert resp.status_code == 201
+    machine_id = resp.get_json()["machine_id"]
+    machine_token = resp.get_json()["token"]
+
+    # Upload file as machine (with content that matches a rule)
+    dockerfile_content = b"FROM ubuntu\nUSER root\nRUN echo hi\n"
+    data = {"file": (io.BytesIO(dockerfile_content), "Dockerfile")}
+    resp = client.post(
+        f"/machines/{machine_id}/upload",
+        headers={"Authorization": f"Bearer {machine_token}"},
+        content_type="multipart/form-data",
+        data=data,
+    )
+    assert resp.status_code == 201
+    result = resp.get_json()
+    assert "id" in result
+    assert "filename" in result
+    assert "scan_results" in result
+
+    # Check scan results
+    scan_results = result["scan_results"]
+    assert "total_findings" in scan_results
+    assert "critical_findings" in scan_results
+    assert "high_findings" in scan_results
+    assert "medium_findings" in scan_results
+    assert "findings" in scan_results
+
+    # Should have at least one finding (USER root rule)
+    assert scan_results["total_findings"] > 0
+    assert len(scan_results["findings"]) > 0
+
+    # Test with invalid machine token
+    data = {"file": (io.BytesIO(dockerfile_content), "Dockerfile")}
+    resp = client.post(
+        f"/machines/{machine_id}/upload",
+        headers={"Authorization": f"Bearer invalid_token"},
+        content_type="multipart/form-data",
+        data=data,
+    )
+    assert resp.status_code == 401
+
+    # Test with wrong machine ID
+    data = {"file": (io.BytesIO(dockerfile_content), "Dockerfile")}
+    resp = client.post(
+        "/machines/00000000-0000-0000-0000-000000000000/upload",
+        headers={"Authorization": f"Bearer {machine_token}"},
+        content_type="multipart/form-data",
+        data=data,
+    )
+    assert resp.status_code == 401
