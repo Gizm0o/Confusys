@@ -32,7 +32,7 @@ python frontend.py
 
 - **Frontend (Web UI)**: http://localhost:3000
 - **API Server**: http://localhost:5000
-- **Swagger Documentation**: http://localhost:5000/swagger
+- **Swagger Docupymentation**: http://localhost:5000/swagger
 
 ## Default Login
 

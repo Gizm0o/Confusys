@@ -5,6 +5,7 @@
 {% block content %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+
 <div class="container mt-4">
   <div class="row align-items-center">
     <!-- Colonne du score -->
@@ -28,6 +29,17 @@
         <a href="{{ url_for('rules') }}" class="btn btn-info">
           <i class="bi bi-shield"></i> Gérer les Règles
         </a>
+        <a href="{{ url_for('view_rules') }}" class="btn btn-outline-info ms-2">
+          <i class="bi bi-list"></i> Voir Toutes les Règles
+        </a>
+        {% if is_admin() %}
+        <a href="{{ url_for('admin_users') }}" class="btn btn-warning ms-2">
+          <i class="bi bi-people"></i> Gérer les Utilisateurs
+        </a>
+        <a href="{{ url_for('admin_roles') }}" class="btn btn-outline-warning ms-2">
+          <i class="bi bi-shield"></i> Gérer les Rôles
+        </a>
+        {% endif %}
       </div>
 
       <!-- Alert Messages -->

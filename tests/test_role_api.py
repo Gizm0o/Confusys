@@ -56,10 +56,12 @@ def test_admin_can_create_and_delete_role(client):
 
 
 def test_non_admin_cannot_create_or_delete_role(client):
-    # Register and login as normal user
+    # Create user via admin and login as normal user
+    admin_token = get_admin_token(client)
     client.post(
-        "/user/register",
+        "/user/users",
         json={"username": "user", "email": "user@example.com", "password": "pass"},
+        headers={"Authorization": f"Bearer {admin_token}"},
     )
     resp = client.post("/user/login", json={"username": "user", "password": "pass"})
     token = resp.get_json()["token"]
@@ -81,10 +83,11 @@ def test_assign_remove_role_to_user_and_machine(client):
         headers={"Authorization": f"Bearer {admin_token}"},
     )
     role_id = resp.get_json()["id"]
-    # Register user
+    # Create user via admin
     client.post(
-        "/user/register",
+        "/user/users",
         json={"username": "user2", "email": "user2@example.com", "password": "pass"},
+        headers={"Authorization": f"Bearer {admin_token}"},
     )
     resp = client.post("/user/login", json={"username": "user2", "password": "pass"})
     user_id = resp.get_json()["user_id"]

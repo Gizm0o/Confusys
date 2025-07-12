@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Modifier le Rôle - ConfuSys{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Modifier le Rôle</h2>
+    <a href="{{ url_for('admin_roles') }}" class="btn btn-secondary">
+      <i class="bi bi-arrow-left"></i> Retour
+    </a>
+  </div>
+
+  <div class="row">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">Modifier: {{ role.name }}</h5>
+        </div>
+        <div class="card-body">
+          <form method="POST">
+            <div class="mb-3">
+              <label for="name" class="form-label">Nom du rôle *</label>
+              <input type="text" class="form-control" id="name" name="name" 
+                     value="{{ role.name }}" required placeholder="Nom du rôle"
+                     {% if role.name == 'admin' %}readonly{% endif %}>
+              <div class="form-text">
+                {% if role.name == 'admin' %}
+                  Le rôle admin ne peut pas être renommé.
+                {% else %}
+                  Le nom du rôle doit être unique et descriptif.
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="description" class="form-label">Description</label>
+              <textarea class="form-control" id="description" name="description" 
+                        rows="3" placeholder="Description du rôle (optionnel)">{{ role.description or '' }}</textarea>
+              <div class="form-text">Décrivez les permissions et responsabilités de ce rôle.</div>
+            </div>
+
+            <div class="d-flex justify-content-between">
+              <a href="{{ url_for('admin_roles') }}" class="btn btn-secondary">
+                <i class="bi bi-x"></i> Annuler
+              </a>
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check"></i> Enregistrer les Modifications
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-header">
+          <h6 class="card-title mb-0">Informations</h6>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <strong>ID Rôle:</strong><br>
+            <code>{{ role.id }}</code>
+          </div>
+          
+          <div class="mb-3">
+            <strong>Utilisateurs assignés:</strong><br>
+            <span class="badge bg-secondary">{{ role.user_count }} utilisateur(s)</span>
+          </div>
+          
+          {% if role.name == 'admin' %}
+          <div class="alert alert-danger">
+            <i class="bi bi-shield-exclamation"></i>
+            <strong>Rôle système:</strong> Ce rôle ne peut pas être supprimé.
+          </div>
+          {% endif %}
+          
+          <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i>
+            <strong>Note:</strong> Seuls les champs modifiés seront mis à jour.
+          </div>
+          
+          <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i>
+            <strong>Attention:</strong> Les modifications prennent effet immédiatement.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} 

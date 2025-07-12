@@ -25,9 +25,22 @@
       {% endif %}
       
       {% if session.username %}
+      <div class="navbar-nav me-auto">
+        <a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a class="nav-link" href="{{ url_for('add_machine') }}">Machines</a>
+        <a class="nav-link" href="{{ url_for('rules') }}">Règles</a>
+        <a class="nav-link" href="{{ url_for('view_rules') }}">Toutes les Règles</a>
+        {% if is_admin() %}
+        <a class="nav-link" href="{{ url_for('admin_users') }}">Utilisateurs</a>
+        <a class="nav-link" href="{{ url_for('admin_roles') }}">Rôles</a>
+        {% endif %}
+      </div>
       <div class="dropdown ms-auto">
         <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
           👤 {{ session.username }}
+          {% if is_admin() %}
+            <span class="badge bg-danger ms-1">Admin</span>
+          {% endif %}
         </button>
         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
           <li><a class="dropdown-item" href="{{ url_for('profile') }}">Profil</a></li>

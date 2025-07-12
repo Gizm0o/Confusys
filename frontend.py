@@ -1,8 +1,22 @@
 from io import BytesIO
 
 import jwt
+from io import BytesIO
+
+import jwt
 import requests
 import yaml
+from flask import (
+    Flask,
+    Response,
+    flash,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
 from flask import (
     Flask,
     Response,
@@ -23,11 +37,42 @@ app.config["API_URL"] = "http://api:5000"
 # API URL configuration
 import os
 
+
 API_BASE_URL = os.environ.get("API_URL", "http://api:5000")
+
+
+# Helper functions for role checking
+def is_admin():
+    """Check if current user is admin"""
+    return "admin" in session.get("user_roles", [])
+
+
+def has_role(role_name):
+    """Check if current user has a specific role"""
+    return role_name in session.get("user_roles", [])
+
+
+def login_required(f):
+    """Decorator to require login for routes"""
+    from functools import wraps
+
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get("token"):
+            flash("Veuillez vous connecter pour accéder à cette page.", "warning")
+            return redirect(url_for("login"))
+        return f(*args, **kwargs)
+
+    return decorated_function
+
+
+# Make helper functions available to templates
+app.jinja_env.globals.update(is_admin=is_admin, has_role=has_role)
 
 # Configure Flask app for static files
 app.static_folder = "static"
 app.static_url_path = "/static"
+
 
 
 @app.route("/")
@@ -83,12 +128,28 @@ def login():
             data = response.json()
             session["token"] = data["token"]
             session["username"] = username
+
+            # Fetch user details including roles
+            headers = {"Authorization": f"Bearer {data['token']}"}
+            try:
+                user_response = requests.get(
+                    f"{API_BASE_URL}/user/users/{data['user_id']}", headers=headers
+                )
+                if user_response.status_code == 200:
+                    user_data = user_response.json()
+                    session["user_roles"] = user_data.get("roles", [])
+                else:
+                    session["user_roles"] = []
+            except Exception:
+                session["user_roles"] = []
+
             return redirect(url_for("dashboard"))
         else:
             flash("Identifiants invalides", "danger")
             return redirect(url_for("login"))
 
     return render_template("login.html")
+
 
 
 @app.route("/logout")
@@ -99,11 +160,9 @@ def logout():
 
 
 @app.route("/dashboard")
+@login_required
 def dashboard():
     token = session.get("token")
-    if not token:
-        return redirect(url_for("login"))
-
     headers = {"Authorization": f"Bearer {token}"}
     try:
         resp = requests.get(f"{API_BASE_URL}/machines", headers=headers)
@@ -140,11 +199,9 @@ def dashboard():
 
 
 @app.route("/machines/add", methods=["GET", "POST"])
+@login_required
 def add_machine():
     token = session.get("token")
-    if not token:
-        return redirect(url_for("login"))
-
     headers = {"Authorization": f"Bearer {token}"}
 
     try:
@@ -183,12 +240,11 @@ def add_machine():
     return render_template("add_machine.html", roles=roles, technologies=technologies)
 
 
+
 @app.route("/machines/delete/<machine_id>", methods=["POST"])
+@login_required
 def delete_machine(machine_id):
     token = session.get("token")
-    if not token:
-        return redirect(url_for("login"))
-
     headers = {"Authorization": f"Bearer {token}"}
     try:
         resp = requests.delete(f"{API_BASE_URL}/machines/{machine_id}", headers=headers)
@@ -202,26 +258,25 @@ def delete_machine(machine_id):
     return redirect(url_for("dashboard"))
 
 
-@app.route("/profile")
-def profile():
-    if "token" not in session:
-        return redirect(url_for("login"))
 
+@app.route("/profile")
+@login_required
+def profile():
     username = session.get("username", "Inconnu")
     return render_template("profile.html", username=username)
 
 
+
 @app.route("/about")
+@login_required
 def about():
     return render_template("about.html")
 
 
 @app.route("/machines/<machine_id>/view")
+@login_required
 def view_machine(machine_id):
     token = session.get("token")
-    if not token:
-        return redirect(url_for("login"))
-
     headers = {"Authorization": f"Bearer {token}"}
     details_url = f"{API_BASE_URL}/machines/{machine_id}"
     script_url = f"{API_BASE_URL}/machines/{machine_id}/script"
@@ -236,6 +291,7 @@ def view_machine(machine_id):
 
         info = info_resp.json()
         script = script_resp.json().get("script", "")
+
 
         info["script"] = script
         info["roles"] = info.get("roles", [])
@@ -263,11 +319,9 @@ def view_machine(machine_id):
 
 
 @app.route("/machines/<machine_id>/script/download")
+@login_required
 def download_script(machine_id):
     token = session.get("token")
-    if not token:
-        return redirect(url_for("login"))
-
     headers = {"Authorization": f"Bearer {token}"}
     backend_url = f"{API_BASE_URL}/machines/{machine_id}/script/download"
 
@@ -278,7 +332,14 @@ def download_script(machine_id):
             content_type=response.headers.get(
                 "Content-Type", "application/octet-stream"
             ),
+            content_type=response.headers.get(
+                "Content-Type", "application/octet-stream"
+            ),
             headers={
+                "Content-Disposition": response.headers.get(
+                    "Content-Disposition", f'attachment; filename="audit_script.sh"'
+                )
+            },
                 "Content-Disposition": response.headers.get(
                     "Content-Disposition", f'attachment; filename="audit_script.sh"'
                 )
@@ -290,11 +351,9 @@ def download_script(machine_id):
 
 
 @app.route("/rules")
+@login_required
 def rules():
     token = session.get("token")
-    if not token:
-        return redirect(url_for("login"))
-
     headers = {"Authorization": f"Bearer {token}"}
 
     try:
@@ -310,23 +369,25 @@ def rules():
 
 
 @app.route("/rules/upload", methods=["POST"])
+@login_required
 def upload_rules():
     token = session.get("token")
-    if not token:
-        return {"success": False, "error": "Non autorisé"}, 401
-
     headers = {"Authorization": f"Bearer {token}"}
+
 
     try:
         file = request.files.get("file")
         description = request.form.get("description")
         roles = request.form.getlist("roles")
 
+
         if not file or not file.filename:
             return {"success": False, "error": "Aucun fichier sélectionné"}
 
+
         if not description:
             return {"success": False, "error": "Description requise"}
+
 
         # Validate YAML format
         try:
@@ -335,8 +396,10 @@ def upload_rules():
         except yaml.YAMLError as e:
             return {"success": False, "error": f"Format YAML invalide: {str(e)}"}
 
+
         # Reset file pointer for upload
         file.seek(0)
+
 
         # Prepare form data for API
         files = {"file": (file.filename, file, file.content_type)}
@@ -357,11 +420,18 @@ def upload_rules():
                 "error": error_data.get("error", "Erreur lors de l'upload"),
             }
 
+            return {
+                "success": False,
+                "error": error_data.get("error", "Erreur lors de l'upload"),
+            }
+
     except Exception as e:
         return {"success": False, "error": f"Erreur: {str(e)}"}
 
 
+
 @app.route("/rules/validate", methods=["POST"])
+@login_required
 def validate_rules():
     token = session.get("token")
     if not token:
@@ -372,7 +442,9 @@ def validate_rules():
         if not content.strip():
             return {"valid": False, "errors": ["Contenu vide"]}
 
+
         errors = []
+
 
         # Parse YAML
         try:
@@ -380,9 +452,11 @@ def validate_rules():
         except yaml.YAMLError as e:
             return {"valid": False, "errors": [f"Erreur de syntaxe YAML: {str(e)}"]}
 
+
         # Validate structure
         if not isinstance(data, dict):
             errors.append("Le contenu doit être un objet YAML")
+
 
         if "rules" not in data:
             errors.append("Le fichier doit contenir une section 'rules'")
@@ -395,7 +469,15 @@ def validate_rules():
                     errors.append(f"Règle {i+1}: doit être un objet")
                     continue
 
+
                 # Required fields
+                required_fields = [
+                    "id",
+                    "description",
+                    "search",
+                    "severity",
+                    "category",
+                ]
                 required_fields = [
                     "id",
                     "description",
@@ -407,10 +489,15 @@ def validate_rules():
                     if field not in rule:
                         errors.append(f"Règle {i+1}: champ '{field}' requis")
 
+
                 # Validate severity
                 if "severity" in rule:
                     valid_severities = ["Critical", "High", "Medium", "Low"]
                     if rule["severity"] not in valid_severities:
+                        errors.append(
+                            f"Règle {i+1}: sévérité invalide. Valeurs autorisées: {', '.join(valid_severities)}"
+                        )
+
                         errors.append(
                             f"Règle {i+1}: sévérité invalide. Valeurs autorisées: {', '.join(valid_severities)}"
                         )
@@ -421,30 +508,35 @@ def validate_rules():
                     if field in rule and not isinstance(rule[field], bool):
                         errors.append(f"Règle {i+1}: '{field}' doit être un booléen")
 
+
         return {"valid": len(errors) == 0, "errors": errors}
+
 
     except Exception as e:
         return {"valid": False, "errors": [f"Erreur de validation: {str(e)}"]}
 
 
+
 @app.route("/rules/save", methods=["POST"])
+@login_required
 def save_rules():
     token = session.get("token")
-    if not token:
-        return {"success": False, "error": "Non autorisé"}, 401
-
     headers = {"Authorization": f"Bearer {token}"}
+
 
     try:
         content = request.form.get("content", "")
         description = request.form.get("description")
         roles = request.form.getlist("roles")
 
+
         if not content.strip():
             return {"success": False, "error": "Contenu vide"}
 
+
         if not description:
             return {"success": False, "error": "Description requise"}
+
 
         # Validate YAML format
         try:
@@ -452,7 +544,10 @@ def save_rules():
         except yaml.YAMLError as e:
             return {"success": False, "error": f"Format YAML invalide: {str(e)}"}
 
+
         # Create a temporary file for upload
+        file_data = BytesIO(content.encode("utf-8"))
+
         file_data = BytesIO(content.encode("utf-8"))
 
         # Prepare form data for API
@@ -474,19 +569,28 @@ def save_rules():
                 "error": error_data.get("error", "Erreur lors de la sauvegarde"),
             }
 
+            return {
+                "success": False,
+                "error": error_data.get("error", "Erreur lors de la sauvegarde"),
+            }
+
     except Exception as e:
         return {"success": False, "error": f"Erreur: {str(e)}"}
 
 
+
 @app.route("/rules/download/<rule_id>")
+@login_required
 def download_rule(rule_id):
     token = session.get("token")
-    if not token:
-        return redirect(url_for("login"))
-
     headers = {"Authorization": f"Bearer {token}"}
 
+
     try:
+        resp = requests.get(
+            f"{API_BASE_URL}/rules/{rule_id}?download=1", headers=headers
+        )
+
         resp = requests.get(
             f"{API_BASE_URL}/rules/{rule_id}?download=1", headers=headers
         )
@@ -498,29 +602,33 @@ def download_rule(rule_id):
                 headers={
                     "Content-Disposition": f"attachment; filename=rule_{rule_id}.yml"
                 },
+                headers={
+                    "Content-Disposition": f"attachment; filename=rule_{rule_id}.yml"
+                },
             )
         else:
             flash("Erreur lors du téléchargement", "danger")
             return redirect(url_for("rules"))
+
 
     except Exception:
         flash("Erreur de connexion", "danger")
         return redirect(url_for("rules"))
 
 
+
 @app.route("/rules/delete/<rule_id>", methods=["POST"])
+@login_required
 def delete_rule(rule_id):
     token = session.get("token")
-    if not token:
-        return redirect(url_for("login"))
-
     headers = {"Authorization": f"Bearer {token}"}
 
     try:
         resp = requests.delete(f"{API_BASE_URL}/rules/{rule_id}", headers=headers)
 
         if resp.status_code == 200:
-            flash("Règle supprimée avec succès", "success")
+            flash("Rôle mis à jour avec succès.", "success")
+            return redirect(url_for("admin_roles"))
         else:
             flash("Erreur lors de la suppression", "danger")
 
@@ -531,4 +639,6 @@ def delete_rule(rule_id):
 
 
 if __name__ == "__main__":
+    app.run(debug=True, port=3000, host="0.0.0.0")
+
     app.run(debug=True, port=3000, host="0.0.0.0")
