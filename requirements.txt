@@ -3,7 +3,7 @@ Flask-SQLAlchemy==3.0.5
 Flask-JWT-Extended==4.5.3
 PyJWT==2.8.0
 Werkzeug==2.3.7
-psycopg2-binary==2.9.7
+psycopg2-binary==2.9.10
 pytest==8.4.1
 pytest-cov==4.1.0
 
