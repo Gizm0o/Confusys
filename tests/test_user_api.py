@@ -18,6 +18,10 @@ def client():
     app = create_app(test_config)
     with app.app_context():
         db.create_all()
+        # Initialize database with admin user and role
+        from api import init_db
+
+        init_db(app)
         yield app.test_client()
         db.session.remove()
         db.drop_all()
