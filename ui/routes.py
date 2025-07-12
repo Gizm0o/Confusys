@@ -1,6 +1,7 @@
 # ui/routes.py
 import requests
 from flask import (
+    Response,
     current_app,
     flash,
     redirect,
@@ -8,7 +9,6 @@ from flask import (
     request,
     session,
     url_for,
-    Response,
 )
 
 from . import ui_bp
@@ -234,12 +234,15 @@ def download_script(machine_id):
     if response.status_code == 200:
         return Response(
             response.iter_content(chunk_size=1024),
-            content_type=response.headers.get("Content-Type", "application/octet-stream"),
+            content_type=response.headers.get(
+                "Content-Type", "application/octet-stream"
+            ),
             headers={
-                "Content-Disposition": response.headers.get("Content-Disposition", f'attachment; filename="audit_script.sh"')
-            }
+                "Content-Disposition": response.headers.get(
+                    "Content-Disposition", f'attachment; filename="audit_script.sh"'
+                )
+            },
         )
     else:
         flash("Erreur lors du téléchargement du script.", "danger")
         return redirect(url_for("ui.view_machine", machine_id=machine_id))
-
