@@ -74,7 +74,6 @@ app.static_folder = "static"
 app.static_url_path = "/static"
 
 
-
 @app.route("/")
 def home():
     return redirect(url_for("login"))
@@ -332,14 +331,7 @@ def download_script(machine_id):
             content_type=response.headers.get(
                 "Content-Type", "application/octet-stream"
             ),
-            content_type=response.headers.get(
-                "Content-Type", "application/octet-stream"
-            ),
             headers={
-                "Content-Disposition": response.headers.get(
-                    "Content-Disposition", f'attachment; filename="audit_script.sh"'
-                )
-            },
                 "Content-Disposition": response.headers.get(
                     "Content-Disposition", f'attachment; filename="audit_script.sh"'
                 )
@@ -415,11 +407,6 @@ def upload_rules():
             return {"success": True}
         else:
             error_data = resp.json() if resp.content else {}
-            return {
-                "success": False,
-                "error": error_data.get("error", "Erreur lors de l'upload"),
-            }
-
             return {
                 "success": False,
                 "error": error_data.get("error", "Erreur lors de l'upload"),
