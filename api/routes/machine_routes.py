@@ -121,6 +121,11 @@ def register_machine(current_user: User) -> Tuple[Any, int]:
 @machine_bp.route("", methods=["GET"])
 @token_required
 def list_machines(current_user: User) -> Any:
+    def calculate_audit_score(critical: int, high: int, medium: int) -> int:
+        deduction = (critical * 30) + (high * 20) + (medium * 10)
+        score = max(0, 100 - deduction)
+        return score
+
     if is_admin(current_user):
         machines = Machine.query.all()
     else:
@@ -144,6 +149,26 @@ def list_machines(current_user: User) -> Any:
                     len(report.findings)
                     for file in m.files
                     for report in file.scan_reports
+                ),
+                "audit_score": calculate_audit_score(
+                    sum(
+                        len(report.findings)
+                        for file in m.files
+                        for report in file.scan_reports
+                        if report.findings and report.findings[0].get("severity") == "Critical"
+                    ),
+                    sum(
+                        len(report.findings)
+                        for file in m.files
+                        for report in file.scan_reports
+                        if report.findings and report.findings[0].get("severity") == "High"
+                    ),
+                    sum(
+                        len(report.findings)
+                        for file in m.files
+                        for report in file.scan_reports
+                        if report.findings and report.findings[0].get("severity") == "Medium"
+                    ),
                 ),
             }
             for m in machines

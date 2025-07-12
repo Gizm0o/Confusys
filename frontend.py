@@ -120,14 +120,21 @@ def dashboard():
                     "technologies": m.get("technologies", []),
                     "has_findings": m.get("has_findings", False),
                     "total_findings": m.get("total_findings", 0),
+                    "audit_score": m.get("audit_score", 100),
                 }
                 for m in raw_machines
             ]
+            if machines:
+                total_score = sum(m.get("audit_score", 100) for m in machines)
+                global_score = round(total_score / len(machines))
+            else:
+                global_score = 100
+
     except Exception as e:
         app.logger.error(f"Failed to fetch machines: {e}")
         machines = []
 
-    return render_template("dashboard.html", machines=machines)
+    return render_template("dashboard.html", machines=machines, global_score=global_score)
 
 
 @app.route("/machines/add", methods=["GET", "POST"])
