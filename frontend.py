@@ -1,9 +1,20 @@
-from flask import Flask, render_template, request, session, redirect, url_for, flash, jsonify, Response
+from io import BytesIO
+
+import jwt
 import requests
 import yaml
+from flask import (
+    Flask,
+    Response,
+    flash,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
 from werkzeug.utils import secure_filename
-import jwt
-from io import BytesIO
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 app.config["SECRET_KEY"] = "frontend-secret-key"
@@ -11,15 +22,18 @@ app.config["API_URL"] = "http://api:5000"
 
 # API URL configuration
 import os
+
 API_BASE_URL = os.environ.get("API_URL", "http://api:5000")
 
 # Configure Flask app for static files
 app.static_folder = "static"
 app.static_url_path = "/static"
 
+
 @app.route("/")
 def home():
     return redirect(url_for("login"))
+
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -51,6 +65,7 @@ def register():
 
     return render_template("register.html")
 
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -75,11 +90,13 @@ def login():
 
     return render_template("login.html")
 
+
 @app.route("/logout")
 def logout():
     session.clear()
     flash("Vous avez été déconnecté.", "info")
     return redirect(url_for("login"))
+
 
 @app.route("/dashboard")
 def dashboard():
@@ -111,6 +128,7 @@ def dashboard():
         machines = []
 
     return render_template("dashboard.html", machines=machines)
+
 
 @app.route("/machines/add", methods=["GET", "POST"])
 def add_machine():
@@ -155,6 +173,7 @@ def add_machine():
 
     return render_template("add_machine.html", roles=roles, technologies=technologies)
 
+
 @app.route("/machines/delete/<machine_id>", methods=["POST"])
 def delete_machine(machine_id):
     token = session.get("token")
@@ -173,6 +192,7 @@ def delete_machine(machine_id):
 
     return redirect(url_for("dashboard"))
 
+
 @app.route("/profile")
 def profile():
     if "token" not in session:
@@ -180,6 +200,7 @@ def profile():
 
     username = session.get("username", "Inconnu")
     return render_template("profile.html", username=username)
+
 
 @app.route("/about")
 def about():
@@ -206,7 +227,7 @@ def view_machine(machine_id):
 
         info = info_resp.json()
         script = script_resp.json().get("script", "")
-        
+
         info["script"] = script
         info["roles"] = info.get("roles", [])
         info["technologies"] = info.get("technologies", [])
@@ -224,12 +245,10 @@ def view_machine(machine_id):
             else:
                 report["score"] = "success"
 
-
     except Exception as e:
         app.logger.error(f"Erreur détail machine : {e}")
         flash("Erreur lors du chargement des détails.", "danger")
         return redirect(url_for("dashboard"))
-
 
     return render_template("machine_detail.html", machine=info)
 
@@ -247,10 +266,14 @@ def download_script(machine_id):
     if response.status_code == 200:
         return Response(
             response.iter_content(chunk_size=1024),
-            content_type=response.headers.get("Content-Type", "application/octet-stream"),
+            content_type=response.headers.get(
+                "Content-Type", "application/octet-stream"
+            ),
             headers={
-                "Content-Disposition": response.headers.get("Content-Disposition", f'attachment; filename="audit_script.sh"')
-            }
+                "Content-Disposition": response.headers.get(
+                    "Content-Disposition", f'attachment; filename="audit_script.sh"'
+                )
+            },
         )
     else:
         flash("Erreur lors du téléchargement du script.", "danger")
@@ -276,6 +299,7 @@ def rules():
 
     return render_template("rules.html", roles=roles, rules=rules)
 
+
 @app.route("/rules/upload", methods=["POST"])
 def upload_rules():
     token = session.get("token")
@@ -283,68 +307,74 @@ def upload_rules():
         return {"success": False, "error": "Non autorisé"}, 401
 
     headers = {"Authorization": f"Bearer {token}"}
-    
+
     try:
         file = request.files.get("file")
         description = request.form.get("description")
         roles = request.form.getlist("roles")
-        
+
         if not file or not file.filename:
             return {"success": False, "error": "Aucun fichier sélectionné"}
-        
+
         if not description:
             return {"success": False, "error": "Description requise"}
-        
+
         # Validate YAML format
         try:
             content = file.read()
             yaml.safe_load(content)
         except yaml.YAMLError as e:
             return {"success": False, "error": f"Format YAML invalide: {str(e)}"}
-        
+
         # Reset file pointer for upload
         file.seek(0)
-        
+
         # Prepare form data for API
         files = {"file": (file.filename, file, file.content_type)}
         data = {"description": description}
         if roles:
             data["roles"] = roles
-        
-        resp = requests.post(f"{API_BASE_URL}/rules", headers=headers, files=files, data=data)
-        
+
+        resp = requests.post(
+            f"{API_BASE_URL}/rules", headers=headers, files=files, data=data
+        )
+
         if resp.status_code == 201:
             return {"success": True}
         else:
             error_data = resp.json() if resp.content else {}
-            return {"success": False, "error": error_data.get("error", "Erreur lors de l'upload")}
-            
+            return {
+                "success": False,
+                "error": error_data.get("error", "Erreur lors de l'upload"),
+            }
+
     except Exception as e:
         return {"success": False, "error": f"Erreur: {str(e)}"}
+
 
 @app.route("/rules/validate", methods=["POST"])
 def validate_rules():
     token = session.get("token")
     if not token:
         return {"valid": False, "errors": ["Non autorisé"]}, 401
-    
+
     try:
         content = request.form.get("content", "")
         if not content.strip():
             return {"valid": False, "errors": ["Contenu vide"]}
-        
+
         errors = []
-        
+
         # Parse YAML
         try:
             data = yaml.safe_load(content)
         except yaml.YAMLError as e:
             return {"valid": False, "errors": [f"Erreur de syntaxe YAML: {str(e)}"]}
-        
+
         # Validate structure
         if not isinstance(data, dict):
             errors.append("Le contenu doit être un objet YAML")
-        
+
         if "rules" not in data:
             errors.append("Le fichier doit contenir une section 'rules'")
         elif not isinstance(data["rules"], list):
@@ -355,29 +385,38 @@ def validate_rules():
                 if not isinstance(rule, dict):
                     errors.append(f"Règle {i+1}: doit être un objet")
                     continue
-                
+
                 # Required fields
-                required_fields = ["id", "description", "search", "severity", "category"]
+                required_fields = [
+                    "id",
+                    "description",
+                    "search",
+                    "severity",
+                    "category",
+                ]
                 for field in required_fields:
                     if field not in rule:
                         errors.append(f"Règle {i+1}: champ '{field}' requis")
-                
+
                 # Validate severity
                 if "severity" in rule:
                     valid_severities = ["Critical", "High", "Medium", "Low"]
                     if rule["severity"] not in valid_severities:
-                        errors.append(f"Règle {i+1}: sévérité invalide. Valeurs autorisées: {', '.join(valid_severities)}")
-                
+                        errors.append(
+                            f"Règle {i+1}: sévérité invalide. Valeurs autorisées: {', '.join(valid_severities)}"
+                        )
+
                 # Validate boolean fields
                 boolean_fields = ["regex", "case_sensitive"]
                 for field in boolean_fields:
                     if field in rule and not isinstance(rule[field], bool):
                         errors.append(f"Règle {i+1}: '{field}' doit être un booléen")
-        
+
         return {"valid": len(errors) == 0, "errors": errors}
-        
+
     except Exception as e:
         return {"valid": False, "errors": [f"Erreur de validation: {str(e)}"]}
+
 
 @app.route("/rules/save", methods=["POST"])
 def save_rules():
@@ -386,43 +425,49 @@ def save_rules():
         return {"success": False, "error": "Non autorisé"}, 401
 
     headers = {"Authorization": f"Bearer {token}"}
-    
+
     try:
         content = request.form.get("content", "")
         description = request.form.get("description")
         roles = request.form.getlist("roles")
-        
+
         if not content.strip():
             return {"success": False, "error": "Contenu vide"}
-        
+
         if not description:
             return {"success": False, "error": "Description requise"}
-        
+
         # Validate YAML format
         try:
             yaml.safe_load(content)
         except yaml.YAMLError as e:
             return {"success": False, "error": f"Format YAML invalide: {str(e)}"}
-        
+
         # Create a temporary file for upload
-        file_data = BytesIO(content.encode('utf-8'))
-        
+        file_data = BytesIO(content.encode("utf-8"))
+
         # Prepare form data for API
         files = {"file": ("custom_rules.yml", file_data, "application/x-yaml")}
         data = {"description": description}
         if roles:
             data["roles"] = roles
-        
-        resp = requests.post(f"{API_BASE_URL}/rules", headers=headers, files=files, data=data)
-        
+
+        resp = requests.post(
+            f"{API_BASE_URL}/rules", headers=headers, files=files, data=data
+        )
+
         if resp.status_code == 201:
             return {"success": True}
         else:
             error_data = resp.json() if resp.content else {}
-            return {"success": False, "error": error_data.get("error", "Erreur lors de la sauvegarde")}
-            
+            return {
+                "success": False,
+                "error": error_data.get("error", "Erreur lors de la sauvegarde"),
+            }
+
     except Exception as e:
         return {"success": False, "error": f"Erreur: {str(e)}"}
+
 
 @app.route("/rules/download/<rule_id>")
 def download_rule(rule_id):
@@ -431,23 +476,28 @@ def download_rule(rule_id):
         return redirect(url_for("login"))
 
     headers = {"Authorization": f"Bearer {token}"}
-    
+
     try:
-        resp = requests.get(f"{API_BASE_URL}/rules/{rule_id}?download=1", headers=headers)
-        
+        resp = requests.get(
+            f"{API_BASE_URL}/rules/{rule_id}?download=1", headers=headers
+        )
+
         if resp.status_code == 200:
             return Response(
                 resp.content,
                 mimetype="application/x-yaml",
-                headers={"Content-Disposition": f"attachment; filename=rule_{rule_id}.yml"}
+                headers={
+                    "Content-Disposition": f"attachment; filename=rule_{rule_id}.yml"
+                },
             )
         else:
             flash("Erreur lors du téléchargement", "danger")
             return redirect(url_for("rules"))
-            
+
     except Exception:
         flash("Erreur de connexion", "danger")
         return redirect(url_for("rules"))
+
 
 @app.route("/rules/delete/<rule_id>", methods=["POST"])
 def delete_rule(rule_id):
@@ -456,19 +506,20 @@ def delete_rule(rule_id):
         return redirect(url_for("login"))
 
     headers = {"Authorization": f"Bearer {token}"}
-    
+
     try:
         resp = requests.delete(f"{API_BASE_URL}/rules/{rule_id}", headers=headers)
-        
+
         if resp.status_code == 200:
             flash("Règle supprimée avec succès", "success")
         else:
             flash("Erreur lors de la suppression", "danger")
-            
+
     except Exception:
         flash("Erreur de connexion", "danger")
-    
+
     return redirect(url_for("rules"))
 
+
 if __name__ == "__main__":
-    app.run(debug=True, port=3000, host="0.0.0.0") 
+    app.run(debug=True, port=3000, host="0.0.0.0")

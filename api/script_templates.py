@@ -57,4 +57,3 @@ curl -X POST "$API_URL" \\
     script += upload_block
     script += "\nexit 0\n"
     return script
-

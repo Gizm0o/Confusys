@@ -105,7 +105,9 @@ def register_machine(current_user: User) -> Tuple[Any, int]:
     db.session.add(machine)
     db.session.commit()  # machine.id et machine.token sont maintenant générés
 
-    script = generate_audit_script(technologies, token=machine.token, machine_id=machine.id)
+    script = generate_audit_script(
+        technologies, token=machine.token, machine_id=machine.id
+    )
     machine.script = script  # mise à jour du champ script
 
     machine.roles = list(roles)
@@ -136,9 +138,7 @@ def list_machines(current_user: User) -> Any:
                 "roles": [r.name for r in m.roles],
                 "technologies": m.technologies or [],
                 "has_findings": any(
-                    report.findings
-                    for file in m.files
-                    for report in file.scan_reports
+                    report.findings for file in m.files for report in file.scan_reports
                 ),
                 "total_findings": sum(
                     len(report.findings)
@@ -164,11 +164,13 @@ def get_machine(current_user: User, machine_id: str) -> Union[Any, Tuple[Any, in
     scan_reports = []
     for file in machine.files:
         for report in file.scan_reports:
-            scan_reports.append({
-                "scan_id": report.id,
-                "scanned_at": report.scanned_at.isoformat(),
-                "findings": report.findings
-            })
+            scan_reports.append(
+                {
+                    "scan_id": report.id,
+                    "scanned_at": report.scanned_at.isoformat(),
+                    "findings": report.findings,
+                }
+            )
     return jsonify(
         {
             "id": machine.id,
