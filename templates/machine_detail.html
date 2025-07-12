@@ -14,7 +14,7 @@
                 <span class="badge bg-secondary">Inconnu</span>
             {% endif %}
         </h3>
-        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary float-end">
         <i class="bi bi-arrow-left"></i> Retour au Dashboard
         </a>
     </div>
@@ -76,4 +76,52 @@ function copyScript() {
     });
 }
 </script>
+
+<hr class="my-4">
+<h4>Résultat des audits</h4>
+
+{% if machine.scan_reports %}
+  <div class="form-check form-switch mb-3">
+    <input class="form-check-input" type="checkbox" id="viewToggle" onclick="toggleView()">
+    <label class="form-check-label" for="viewToggle">Vue brute (JSON)</label>
+  </div>
+
+  <div id="simplifiedView">
+    {% for report in machine.scan_reports %}
+      <h5>Rapport du {{ report.scanned_at[:10] }}</h5>
+        <span class="badge bg-{{ report.score|default('secondary')|lower }}">
+            Score : {{ report.score|capitalize }}
+        </span>
+      {% for finding in report.findings %}
+        <div class="card mb-2 border-{{ 'danger' if finding.severity == 'Critical' else 'warning' if finding.severity == 'High' else 'secondary' }}">
+          <div class="card-body">
+            <h6 class="card-title">{{ finding.category }} - {{ finding.severity }}</h6>
+            <p class="card-text"><strong>{{ finding.description }}</strong></p>
+            <p class="card-text text-muted">{{ finding.recommendation }}</p>
+            {% if finding.reference %}
+              <a href="{{ finding.reference }}" target="_blank">Lien utile</a>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    {% endfor %}
+  </div>
+
+  <div id="jsonView" class="d-none">
+    <pre>{{ machine.scan_reports | tojson(indent=2) }}</pre>
+  </div>
+
+  <script>
+  function toggleView() {
+    const jsonView = document.getElementById("jsonView");
+    const simpleView = document.getElementById("simplifiedView");
+    jsonView.classList.toggle("d-none");
+    simpleView.classList.toggle("d-none");
+  }
+  </script>
+
+{% else %}
+  <p><em>Aucun rapport d’audit trouvé pour cette machine.</em></p>
+{% endif %}
+
 {% endblock %}

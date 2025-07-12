@@ -3,80 +3,104 @@
 {% block title %}Dashboard - ConfuSys{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Bienvenue, {{ session.username }} !</h2>
-  </div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <div class="mb-4">
-    <a href="{{ url_for('add_machine') }}" class="btn btn-success">+ Ajouter une machine</a>
-    <a href="{{ url_for('rules') }}" class="btn btn-info ms-2">
-      <i class="bi bi-shield"></i> Gérer les Règles
-    </a>
-    <a href="{{ url_for('view_rules') }}" class="btn btn-outline-info ms-2">
-      <i class="bi bi-list"></i> Voir Toutes les Règles
-    </a>
-    {% if is_admin() %}
-    <a href="{{ url_for('admin_users') }}" class="btn btn-warning ms-2">
-      <i class="bi bi-people"></i> Gérer les Utilisateurs
-    </a>
-    <a href="{{ url_for('admin_roles') }}" class="btn btn-outline-warning ms-2">
-      <i class="bi bi-shield"></i> Gérer les Rôles
-    </a>
-    {% endif %}
+<div class="container mt-4">
+  <div class="row align-items-center">
+    <!-- Colonne du score -->
+    <div class="col-lg-4 col-md-6 mb-4">
+      <div class="card text-center shadow-sm p-3">
+        <h5 class="card-title">Score global de sécurité</h5>
+        <canvas id="globalScoreChart" class="w-100" style="max-height: 200px; max-width: 300px;"></canvas>
+        <div class="mt-2">
+          <span class="badge text-white fw-bold px-3 py-2" style="background-color: '{{ 'green' if global_score >= 80 else 'orange' if global_score >= 50 else 'red' }}';">
+            {{ global_score }}%
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Colonne du contenu principal -->
+    <div class="col-lg-8 col-md-6 mb-4 d-flex flex-column justify-content-center">
+      <h2>Bienvenue, {{ session.username }} !</h2>
+      <div class="mt-3">
+        <a href="{{ url_for('add_machine') }}" class="btn btn-success me-2">+ Ajouter une machine</a>
+        <a href="{{ url_for('rules') }}" class="btn btn-info">
+          <i class="bi bi-shield"></i> Gérer les Règles
+        </a>
+        <a href="{{ url_for('view_rules') }}" class="btn btn-outline-info ms-2">
+          <i class="bi bi-list"></i> Voir Toutes les Règles
+        </a>
+        {% if is_admin() %}
+        <a href="{{ url_for('admin_users') }}" class="btn btn-warning ms-2">
+          <i class="bi bi-people"></i> Gérer les Utilisateurs
+        </a>
+        <a href="{{ url_for('admin_roles') }}" class="btn btn-outline-warning ms-2">
+          <i class="bi bi-shield"></i> Gérer les Rôles
+        </a>
+        {% endif %}
+      </div>
+
+      <!-- Alert Messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show mt-3" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+    </div>
   </div>
 
   {% if machines %}
   <div class="table-responsive">
-    <table class="table table-striped table-hover">
+    <table class="table table-striped table-hover align-middle w-100">
       <thead class="table-dark">
         <tr>
-          <th>ID</th>
-          <th>Nom</th>
-          <th>Description</th>
-          <th>Rôles</th>
-          <th>Technologies</th>
-          <th>Actions</th>
+          <th class="text-truncate" style="max-width: 70px;">ID</th>
+          <th class="text-truncate" style="max-width: 70px;">Nom</th>
+          <th class="text-truncate" style="max-width: 70px;" data-bs-toggle="tooltip" title="Description">Description</th>
+          <th class="text-truncate" style="max-width: 100px;">Rôles</th>
+          <th class="text-truncate" style="max-width: 140px;">Technologies</th>
+          <th class="text-truncate" style="max-width: 120px;">Audit</th>
+          <th style="min-width: 150px;">Actions</th>
         </tr>
       </thead>
       <tbody>
         {% for m in machines %}
         <tr>
-          <td>{{ m.id }}</td>
-          <td>{{ m.name }}</td>
-          <td>{{ m.description }}</td>
-          <td>
-            {% if m.roles %}
-              {{ m.roles | join(", ") }}
-            {% else %}
-              <em>Aucun</em>
-            {% endif %}
+          <td class="text-truncate" style="max-width: 70px;" data-bs-toggle="tooltip" title="{{ m.id }}">{{ m.id }}</td>
+          <td class="text-truncate" style="max-width: 100px;">{{ m.name }}</td>
+          <td class="text-truncate" style="max-width: 70px;" data-bs-toggle="tooltip" title="{{ m.description }}">{{ m.description }}</td>
+          <td class="text-truncate" style="max-width: 100px;">
+            {% if m.roles %}{{ m.roles | join(", ") }}{% else %}<em>Aucun</em>{% endif %}
           </td>
-          <td>
+          <td class="text-truncate" style="max-width: 140px;" data-bs-toggle="tooltip" title="{{ m.technologies | join(', ') }}">
             {% if m.technologies|length > 3 %}
-              <span data-bs-toggle="tooltip" title="{{ m.technologies|join(', ') }}">
-                {{ m.technologies|length }} technologies sélectionnées
-              </span>
+              {{ m.technologies|length }} technos choisies
             {% elif m.technologies %}
               {{ m.technologies|join(', ') }}
             {% else %}
               <em>Aucune</em>
             {% endif %}
           </td>
-          <td>
-            <a class="btn btn-sm btn-primary"
-              href="{{ url_for('view_machine', machine_id=m.id) }}">
-              Détails
-            </a>
-            <a class="btn btn-sm btn-success"
-              href="{{ url_for('download_script', machine_id=m.id) }}">
-              Télécharger
-            </a>
-            <form method="POST"
-                  action="{{ url_for('delete_machine', machine_id=m.id) }}"
-                  style="display:inline;"
-                  onsubmit="return confirm('Supprimer cette machine ?');">
-                <button type="submit" class="btn btn-sm btn-danger">Supprimer</button>
+          <td class="text-truncate" style="max-width: 140px;" data-bs-toggle="tooltip" title ="Nombre de finding : {{ m.total_findings }}">
+            {% if m.has_findings %}
+              <span class="badge bg-danger">
+                Audit avec problèmes – {{ m.total_findings }} finding{{ 's' if m.total_findings > 1 else '' }}
+              </span>
+            {% else %}
+              <span class="badge bg-success">Audit OK</span>
+            {% endif %}
+          </td>
+          <td class="d-flex flex-wrap gap-1">
+            <a class="btn btn-sm btn-primary" href="{{ url_for('view_machine', machine_id=m.id) }}">Détails</a>
+            <a class="btn btn-sm btn-success" href="{{ url_for('download_script', machine_id=m.id) }}">Télécharger</a>
+            <form method="POST" action="{{ url_for('delete_machine', machine_id=m.id) }}" onsubmit="return confirm('Supprimer cette machine ?');">
+              <button type="submit" class="btn btn-sm btn-danger">Supprimer</button>
             </form>
           </td>
         </tr>
@@ -85,9 +109,57 @@
     </table>
   </div>
   {% else %}
-    <div class="alert alert-info" role="alert">
+    <div class="alert alert-info mt-3" role="alert">
       Aucune machine disponible pour l'instant.
     </div>
   {% endif %}
+
+  <script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const ctx = document.getElementById("globalScoreChart").getContext("2d");
+    const score = parseInt("{{ global_score }}");
+    const color = score >= 80 ? "#28a745" : score >= 50 ? "#ffc107" : "#dc3545";
+
+    new Chart(ctx, {
+      type: "doughnut",
+      data: {
+        datasets: [{
+          data: [score, 100 - score],
+          backgroundColor: [color, "#e9ecef"],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,  // facultatif pour plus de contrôle
+        rotation: -90,
+        circumference: 180,
+        cutout: "70%",
+        plugins: {
+          tooltip: { enabled: false },
+          legend: { display: false },
+        }
+      },
+      plugins: [{
+        id: 'center-text',
+        beforeDraw(chart) {
+          const { width } = chart;
+          const ctx = chart.ctx;
+          ctx.save();
+          ctx.font = "bold 16px sans-serif";
+          ctx.fillStyle = color;
+          ctx.textAlign = "center";
+          ctx.fillText(score + "%", width / 2, chart._metasets[0].data[0].y + 10);
+        }
+      }]
+    });
+
+    // Init Bootstrap tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+      new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+  });
+  </script>
 </div>
 {% endblock %}

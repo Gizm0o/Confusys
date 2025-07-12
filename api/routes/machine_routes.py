@@ -96,16 +96,20 @@ def register_machine(current_user: User) -> Tuple[Any, int]:
         return jsonify({"error": "Missing machine name"}), 400
     roles = Role.query.filter(Role.name.in_(role_names)).all() if role_names else []
     # Generate the custom audit script
-    script = generate_audit_script(technologies)
     machine = Machine(
         name=name,
         description=description,
         user_id=current_user.id,
-        script=script,
         technologies=technologies,
     )
     db.session.add(machine)
-    db.session.commit()
+    db.session.commit()  # machine.id et machine.token sont maintenant générés
+
+    script = generate_audit_script(
+        technologies, token=machine.token, machine_id=machine.id
+    )
+    machine.script = script  # mise à jour du champ script
+
     machine.roles = list(roles)
     db.session.commit()
     return (
@@ -117,6 +121,11 @@ def register_machine(current_user: User) -> Tuple[Any, int]:
 @machine_bp.route("", methods=["GET"])
 @token_required
 def list_machines(current_user: User) -> Any:
+    def calculate_audit_score(critical: int, high: int, medium: int) -> int:
+        deduction = (critical * 30) + (high * 20) + (medium * 10)
+        score = max(0, 100 - deduction)
+        return score
+
     if is_admin(current_user):
         machines = Machine.query.all()
     else:
@@ -133,6 +142,37 @@ def list_machines(current_user: User) -> Any:
                 "token": m.token,
                 "roles": [r.name for r in m.roles],
                 "technologies": m.technologies or [],
+                "has_findings": any(
+                    report.findings for file in m.files for report in file.scan_reports
+                ),
+                "total_findings": sum(
+                    len(report.findings)
+                    for file in m.files
+                    for report in file.scan_reports
+                ),
+                "audit_score": calculate_audit_score(
+                    sum(
+                        len(report.findings)
+                        for file in m.files
+                        for report in file.scan_reports
+                        if report.findings
+                        and report.findings[0].get("severity") == "Critical"
+                    ),
+                    sum(
+                        len(report.findings)
+                        for file in m.files
+                        for report in file.scan_reports
+                        if report.findings
+                        and report.findings[0].get("severity") == "High"
+                    ),
+                    sum(
+                        len(report.findings)
+                        for file in m.files
+                        for report in file.scan_reports
+                        if report.findings
+                        and report.findings[0].get("severity") == "Medium"
+                    ),
+                ),
             }
             for m in machines
         ]
@@ -149,6 +189,16 @@ def get_machine(current_user: User, machine_id: str) -> Union[Any, Tuple[Any, in
     machine = db.session.get(Machine, machine_id)
     if not machine or not user_can_access_machine(current_user, machine):
         return jsonify({"error": "Machine not found or access denied"}), 404
+    scan_reports = []
+    for file in machine.files:
+        for report in file.scan_reports:
+            scan_reports.append(
+                {
+                    "scan_id": report.id,
+                    "scanned_at": report.scanned_at.isoformat(),
+                    "findings": report.findings,
+                }
+            )
     return jsonify(
         {
             "id": machine.id,
@@ -157,6 +207,7 @@ def get_machine(current_user: User, machine_id: str) -> Union[Any, Tuple[Any, in
             "token": machine.token,
             "roles": [r.name for r in machine.roles],
             "technologies": machine.technologies or [],
+            "scan_reports": scan_reports,
         }
     )
 
