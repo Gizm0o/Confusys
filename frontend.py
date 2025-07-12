@@ -134,7 +134,9 @@ def dashboard():
         app.logger.error(f"Failed to fetch machines: {e}")
         machines = []
 
-    return render_template("dashboard.html", machines=machines, global_score=global_score)
+    return render_template(
+        "dashboard.html", machines=machines, global_score=global_score
+    )
 
 
 @app.route("/machines/add", methods=["GET", "POST"])

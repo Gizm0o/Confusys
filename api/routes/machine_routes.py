@@ -155,19 +155,22 @@ def list_machines(current_user: User) -> Any:
                         len(report.findings)
                         for file in m.files
                         for report in file.scan_reports
-                        if report.findings and report.findings[0].get("severity") == "Critical"
+                        if report.findings
+                        and report.findings[0].get("severity") == "Critical"
                     ),
                     sum(
                         len(report.findings)
                         for file in m.files
                         for report in file.scan_reports
-                        if report.findings and report.findings[0].get("severity") == "High"
+                        if report.findings
+                        and report.findings[0].get("severity") == "High"
                     ),
                     sum(
                         len(report.findings)
                         for file in m.files
                         for report in file.scan_reports
-                        if report.findings and report.findings[0].get("severity") == "Medium"
+                        if report.findings
+                        and report.findings[0].get("severity") == "Medium"
                     ),
                 ),
             }
