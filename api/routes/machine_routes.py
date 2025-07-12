@@ -96,16 +96,18 @@ def register_machine(current_user: User) -> Tuple[Any, int]:
         return jsonify({"error": "Missing machine name"}), 400
     roles = Role.query.filter(Role.name.in_(role_names)).all() if role_names else []
     # Generate the custom audit script
-    script = generate_audit_script(technologies)
     machine = Machine(
         name=name,
         description=description,
         user_id=current_user.id,
-        script=script,
         technologies=technologies,
     )
     db.session.add(machine)
-    db.session.commit()
+    db.session.commit()  # machine.id et machine.token sont maintenant générés
+
+    script = generate_audit_script(technologies, token=machine.token, machine_id=machine.id)
+    machine.script = script  # mise à jour du champ script
+
     machine.roles = list(roles)
     db.session.commit()
     return (
