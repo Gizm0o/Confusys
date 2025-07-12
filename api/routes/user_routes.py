@@ -13,6 +13,7 @@ user_bp = Blueprint("user", __name__)
 
 def admin_required(f: Callable) -> Callable:
     """Decorator to require admin role"""
+
     @wraps(f)
     def decorated(*args: Any, **kwargs: Any) -> Union[Tuple[Any, int], Any]:
         token = None
@@ -20,29 +21,28 @@ def admin_required(f: Callable) -> Callable:
             auth_header = request.headers["Authorization"]
             if auth_header.startswith("Bearer "):
                 token = auth_header.split(" ")[1]
-        
+
         if not token:
             return jsonify({"error": "Token is missing!"}), 401
-        
+
         try:
-            data = jwt.decode(token, current_app.config["SECRET_KEY"], algorithms=["HS256"])
+            data = jwt.decode(
+                token, current_app.config["SECRET_KEY"], algorithms=["HS256"]
+            )
             current_user = db.session.get(User, data["user_id"])
             if not current_user:
                 return jsonify({"error": "User not found!"}), 401
-            
+
             # Check if user is admin
             if not any(role.name == "admin" for role in current_user.roles):
                 return jsonify({"error": "Admin access required!"}), 403
-                
+
         except Exception:
             return jsonify({"error": "Token is invalid!"}), 401
-        
+
         return f(current_user, *args, **kwargs)
-    
+
     return decorated
-
-
-
 
 
 @user_bp.route("/login", methods=["POST"])
@@ -80,15 +80,17 @@ def login() -> Tuple[Any, int]:
 def list_users(current_user: User) -> Any:
     """List all users (admin only)"""
     users = User.query.all()
-    return jsonify([
-        {
-            "id": user.id,
-            "username": user.username,
-            "email": user.email,
-            "roles": [role.name for role in user.roles]
-        }
-        for user in users
-    ])
+    return jsonify(
+        [
+            {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "roles": [role.name for role in user.roles],
+            }
+            for user in users
+        ]
+    )
 
 
 @user_bp.route("/users", methods=["POST"])
@@ -114,24 +116,29 @@ def create_user(current_user: User) -> Tuple[Any, int]:
 
     user = User(username=username, email=email)
     user.set_password(password)
-    
+
     # Assign roles
     if role_names:
         roles = Role.query.filter(Role.name.in_(role_names)).all()
         user.roles = roles
-    
+
     db.session.add(user)
     db.session.commit()
 
-    return jsonify({
-        "message": "User created successfully",
-        "user": {
-            "id": user.id,
-            "username": user.username,
-            "email": user.email,
-            "roles": [role.name for role in user.roles]
-        }
-    }), 201
+    return (
+        jsonify(
+            {
+                "message": "User created successfully",
+                "user": {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email,
+                    "roles": [role.name for role in user.roles],
+                },
+            }
+        ),
+        201,
+    )
 
 
 @user_bp.route("/users/<user_id>", methods=["GET", "PUT", "DELETE"])
@@ -140,6 +147,7 @@ def manage_user(current_user: User, user_id: str) -> Union[Any, Tuple[Any, int]]
     """Get, update, or delete a user (admin only)"""
     try:
         import uuid
+
         uuid.UUID(str(user_id))
     except ValueError:
         return jsonify({"error": "Invalid user ID format"}), 400
@@ -149,22 +157,24 @@ def manage_user(current_user: User, user_id: str) -> Union[Any, Tuple[Any, int]]
         return jsonify({"error": "User not found"}), 404
 
     if request.method == "GET":
-        return jsonify({
-            "id": user.id,
-            "username": user.username,
-            "email": user.email,
-            "roles": [role.name for role in user.roles]
-        })
+        return jsonify(
+            {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "roles": [role.name for role in user.roles],
+            }
+        )
     elif request.method == "PUT":
         data = request.get_json()
-        
+
         if "username" in data:
             # Check if username is already taken by another user
             existing_user = User.query.filter_by(username=data["username"]).first()
             if existing_user and existing_user.id != user_id:
                 return jsonify({"error": "Username already taken"}), 409
             user.username = data["username"]
-        
+
         if "email" in data:
             email = data["email"].strip() if data["email"] else ""
             # Check if email is already taken by another user (only if email is provided)
@@ -173,22 +183,22 @@ def manage_user(current_user: User, user_id: str) -> Union[Any, Tuple[Any, int]]
                 if existing_user and existing_user.id != user_id:
                     return jsonify({"error": "Email already taken"}), 409
             user.email = email
-        
+
         if "password" in data:
             user.set_password(data["password"])
-        
+
         if "roles" in data:
             role_names = data["roles"]
             roles = Role.query.filter(Role.name.in_(role_names)).all()
             user.roles = roles
-        
+
         db.session.commit()
         return jsonify({"message": "User updated successfully"})
     elif request.method == "DELETE":
         # Prevent admin from deleting themselves
         if user.id == current_user.id:
             return jsonify({"error": "Cannot delete your own account"}), 400
-        
+
         db.session.delete(user)
         db.session.commit()
         return jsonify({"message": "User deleted successfully"})
@@ -201,15 +211,17 @@ def manage_user(current_user: User, user_id: str) -> Union[Any, Tuple[Any, int]]
 def list_roles(current_user: User) -> Any:
     """List all roles (admin only)"""
     roles = Role.query.all()
-    return jsonify([
-        {
-            "id": role.id,
-            "name": role.name,
-            "description": role.description,
-            "user_count": role.users.count()
-        }
-        for role in roles
-    ])
+    return jsonify(
+        [
+            {
+                "id": role.id,
+                "name": role.name,
+                "description": role.description,
+                "user_count": role.users.count(),
+            }
+            for role in roles
+        ]
+    )
 
 
 @user_bp.route("/roles", methods=["POST"])
@@ -230,14 +242,19 @@ def create_role(current_user: User) -> Tuple[Any, int]:
     db.session.add(role)
     db.session.commit()
 
-    return jsonify({
-        "message": "Role created successfully",
-        "role": {
-            "id": role.id,
-            "name": role.name,
-            "description": role.description
-        }
-    }), 201
+    return (
+        jsonify(
+            {
+                "message": "Role created successfully",
+                "role": {
+                    "id": role.id,
+                    "name": role.name,
+                    "description": role.description,
+                },
+            }
+        ),
+        201,
+    )
 
 
 @user_bp.route("/roles/<role_id>", methods=["GET", "PUT", "DELETE"])
@@ -249,32 +266,34 @@ def manage_role(current_user: User, role_id: int) -> Union[Any, Tuple[Any, int]]
         return jsonify({"error": "Role not found"}), 404
 
     if request.method == "GET":
-        return jsonify({
-            "id": role.id,
-            "name": role.name,
-            "description": role.description,
-            "user_count": role.users.count()
-        })
+        return jsonify(
+            {
+                "id": role.id,
+                "name": role.name,
+                "description": role.description,
+                "user_count": role.users.count(),
+            }
+        )
     elif request.method == "PUT":
         data = request.get_json()
-        
+
         if "name" in data:
             # Check if name is already taken by another role
             existing_role = Role.query.filter_by(name=data["name"]).first()
             if existing_role and existing_role.id != role_id:
                 return jsonify({"error": "Role name already taken"}), 409
             role.name = data["name"]
-        
+
         if "description" in data:
             role.description = data["description"]
-        
+
         db.session.commit()
         return jsonify({"message": "Role updated successfully"})
     elif request.method == "DELETE":
         # Prevent deletion of admin role
         if role.name == "admin":
             return jsonify({"error": "Cannot delete admin role"}), 400
-        
+
         db.session.delete(role)
         db.session.commit()
         return jsonify({"message": "Role deleted successfully"})
