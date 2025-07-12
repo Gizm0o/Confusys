@@ -37,6 +37,7 @@
           <th>Description</th>
           <th>Rôles</th>
           <th>Technologies</th>
+          <th>Audit</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -62,6 +63,15 @@
               {{ m.technologies|join(', ') }}
             {% else %}
               <em>Aucune</em>
+            {% endif %}
+          </td>
+          <td>
+            {% if m.has_findings %}
+              <span class="badge bg-danger">
+                Audit avec problèmes – {{ m.total_findings }} finding{{ 's' if m.total_findings > 1 else '' }}
+              </span>
+            {% else %}
+              <span class="badge bg-success">Audit OK</span>
             {% endif %}
           </td>
           <td>

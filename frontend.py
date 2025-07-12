@@ -101,6 +101,8 @@ def dashboard():
                     "description": m.get("description", ""),
                     "roles": m.get("roles", []),
                     "technologies": m.get("technologies", []),
+                    "has_findings": m.get("has_findings", False),
+                    "total_findings": m.get("total_findings", 0),
                 }
                 for m in raw_machines
             ]

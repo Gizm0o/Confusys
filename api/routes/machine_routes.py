@@ -135,6 +135,16 @@ def list_machines(current_user: User) -> Any:
                 "token": m.token,
                 "roles": [r.name for r in m.roles],
                 "technologies": m.technologies or [],
+                "has_findings": any(
+                    report.findings
+                    for file in m.files
+                    for report in file.scan_reports
+                ),
+                "total_findings": sum(
+                    len(report.findings)
+                    for file in m.files
+                    for report in file.scan_reports
+                ),
             }
             for m in machines
         ]
