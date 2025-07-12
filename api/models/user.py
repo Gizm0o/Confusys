@@ -24,7 +24,7 @@ class User(db.Model):
         db.String(36), primary_key=True, default=lambda: str(uuid4()), unique=True
     )
     username = db.Column(db.String(80), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=True)
     password_hash = db.Column(db.String(256), nullable=False)
     roles = db.relationship(
         "Role", secondary=user_roles, backref=db.backref("users", lazy="dynamic")

@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Gestion des Rôles - ConfuSys{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Gestion des Rôles</h2>
+    <div>
+      <a href="{{ url_for('create_role') }}" class="btn btn-success">
+        <i class="bi bi-shield-plus"></i> Nouveau Rôle
+      </a>
+      <a href="{{ url_for('admin_users') }}" class="btn btn-info ms-2">
+        <i class="bi bi-people"></i> Gérer les Utilisateurs
+      </a>
+      <a href="{{ url_for('dashboard') }}" class="btn btn-secondary ms-2">
+        <i class="bi bi-arrow-left"></i> Retour
+      </a>
+    </div>
+  </div>
+
+  {% if roles %}
+  <div class="table-responsive">
+    <table class="table table-striped table-hover">
+      <thead class="table-dark">
+        <tr>
+          <th>Nom du Rôle</th>
+          <th>Description</th>
+          <th>Utilisateurs</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for role in roles %}
+        <tr>
+          <td>
+            <strong>{{ role.name }}</strong>
+            {% if role.name == 'admin' %}
+              <span class="badge bg-danger ms-1">Système</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if role.description %}
+              {{ role.description }}
+            {% else %}
+              <em class="text-muted">Aucune description</em>
+            {% endif %}
+          </td>
+          <td>
+            <span class="badge bg-secondary">{{ role.user_count }} utilisateur(s)</span>
+          </td>
+          <td>
+            <a class="btn btn-sm btn-warning"
+               href="{{ url_for('edit_role', role_id=role.id) }}"
+               title="Modifier">
+              <i class="bi bi-pencil"></i>
+            </a>
+            {% if role.name != 'admin' %}
+            <form method="POST"
+                  action="{{ url_for('delete_role', role_id=role.id) }}"
+                  style="display:inline;"
+                  onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce rôle ?');">
+              <button type="submit" class="btn btn-sm btn-danger" title="Supprimer">
+                <i class="bi bi-trash"></i>
+              </button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <div class="alert alert-info" role="alert">
+      Aucun rôle disponible.
+    </div>
+  {% endif %}
+</div>
+{% endblock %} 
