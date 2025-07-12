@@ -3,7 +3,7 @@ from functools import wraps
 from typing import Any, Callable, List, Tuple, Union
 
 import jwt
-from flask import Blueprint, current_app, jsonify, request
+from flask import Blueprint, current_app, jsonify, make_response, request
 from werkzeug.utils import secure_filename
 
 from api import db
@@ -156,6 +156,7 @@ def get_machine(current_user: User, machine_id: str) -> Union[Any, Tuple[Any, in
             "description": machine.description,
             "token": machine.token,
             "roles": [r.name for r in machine.roles],
+            "technologies": machine.technologies or [],
         }
     )
 
@@ -302,6 +303,21 @@ def get_machine_script(current_user: User, machine_id: str) -> Any:
     if not machine or not user_can_access_machine(current_user, machine):
         return jsonify({"error": "Machine not found or access denied"}), 404
     return jsonify({"script": machine.script})
+
+
+@machine_bp.route("/<machine_id>/script/download", methods=["GET"])
+@token_required
+def download_machine_script(current_user: User, machine_id: str):
+    machine = db.session.get(Machine, machine_id)
+    if not machine or not user_can_access_machine(current_user, machine):
+        return jsonify({"error": "Access denied"}), 403
+
+    response = make_response(machine.script)
+    response.headers.set("Content-Type", "text/x-shellscript")
+    response.headers.set(
+        "Content-Disposition", f"attachment; filename=script_{machine.name}.sh"
+    )
+    return response
 
 
 @machine_bp.route("/technologies", methods=["GET"])
