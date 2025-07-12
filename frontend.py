@@ -7,11 +7,11 @@ from io import BytesIO
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 app.config["SECRET_KEY"] = "frontend-secret-key"
-app.config["API_URL"] = "http://localhost:5000"
+app.config["API_URL"] = "http://api:5000"
 
 # API URL configuration
 import os
-API_BASE_URL = os.environ.get("API_URL", "http://localhost:5000")
+API_BASE_URL = os.environ.get("API_URL", "http://api:5000")
 
 # Configure Flask app for static files
 app.static_folder = "static"
@@ -182,6 +182,64 @@ def profile():
 @app.route("/about")
 def about():
     return render_template("about.html")
+
+
+@app.route("/machines/<machine_id>/view")
+def view_machine(machine_id):
+    token = session.get("token")
+    if not token:
+        return redirect(url_for("login"))
+
+    headers = {"Authorization": f"Bearer {token}"}
+    details_url = f"{API_BASE_URL}/machines/{machine_id}"
+    script_url = f"{API_BASE_URL}/machines/{machine_id}/script"
+
+    try:
+        info_resp = requests.get(details_url, headers=headers)
+        script_resp = requests.get(script_url, headers=headers)
+
+        if info_resp.status_code != 200 or script_resp.status_code != 200:
+            flash("Erreur lors du chargement de la machine ou du script.", "danger")
+            return redirect(url_for("dashboard"))
+
+        info = info_resp.json()
+        script = script_resp.json().get("script", "")
+        
+        info["script"] = script
+        info["roles"] = info.get("roles", [])
+        info["technologies"] = info.get("technologies", [])
+
+    except Exception as e:
+        app.logger.error(f"Erreur détail machine : {e}")
+        flash("Erreur lors du chargement des détails.", "danger")
+        return redirect(url_for("dashboard"))
+
+
+    return render_template("machine_detail.html", machine=info)
+
+
+@app.route("/machines/<machine_id>/script/download")
+def download_script(machine_id):
+    token = session.get("token")
+    if not token:
+        return redirect(url_for("login"))
+
+    headers = {"Authorization": f"Bearer {token}"}
+    backend_url = f"{API_BASE_URL}/machines/{machine_id}/script/download"
+
+    response = requests.get(backend_url, headers=headers, stream=True)
+    if response.status_code == 200:
+        return Response(
+            response.iter_content(chunk_size=1024),
+            content_type=response.headers.get("Content-Type", "application/octet-stream"),
+            headers={
+                "Content-Disposition": response.headers.get("Content-Disposition", f'attachment; filename="audit_script.sh"')
+            }
+        )
+    else:
+        flash("Erreur lors du téléchargement du script.", "danger")
+        return redirect(url_for("view_machine", machine_id=machine_id))
+
 
 @app.route("/rules")
 def rules():

@@ -32,9 +32,9 @@
         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
           <li><a class="dropdown-item" href="{{ url_for('profile') }}">Profil</a></li>
           <li><a class="dropdown-item" href="{{ url_for('about') }}">À propos</a></li>
-          <li><a class="dropdown-item" href="/swagger" target="_blank">Docs API</a></li>
+          <!--<li><a class="dropdown-item" href="http://api:5000/swagger" target="_blank">Docs API</a></li> -->
           <li><hr class="dropdown-divider"></li>
-                      <li><a class="dropdown-item" href="{{ url_for('logout') }}">Déconnexion</a></li>
+          <li><a class="dropdown-item" href="{{ url_for('logout') }}">Déconnexion</a></li>
         </ul>
       </div>
       {% endif %}

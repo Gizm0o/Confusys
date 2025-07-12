@@ -2,55 +2,78 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h3>Détails de la machine : {{ machine.name }}</h3>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3>
+            Détails de la machine : {{ machine.name }}
+            {% if machine.status == "UP" %}
+                <span class="badge bg-success">UP</span>
+            {% elif machine.status == "DOWN" %}
+                <span class="badge bg-danger">DOWN</span>
+            {% else %}
+                <span class="badge bg-secondary">Inconnu</span>
+            {% endif %}
+        </h3>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Retour au Dashboard
+        </a>
+    </div>
+
     <p><strong>Description :</strong> {{ machine.description }}</p>
+
     <p><strong>Rôles :</strong>
         {% if machine.roles %}
-            {{ machine.roles | join(', ') }}
+            {% for role in machine.roles %}
+                <span class="badge bg-info text-dark me-1">{{ role }}</span>
+            {% endfor %}
         {% else %}
             <em>Aucun</em>
         {% endif %}
     </p>
+
     <p><strong>Technologies :</strong>
         {% if machine.technologies %}
-            {{ machine.technologies | join(', ') }}
+            {% for tech in machine.technologies %}
+                <span class="badge bg-warning text-dark me-1">{{ tech }}</span>
+            {% endfor %}
         {% else %}
             <em>Aucune</em>
         {% endif %}
     </p>
 
     <label for="script" class="form-label mt-4">Script Bash généré :</label>
-    <textarea id="script" class="form-control" rows="12" readonly style="font-family: monospace;">{{ machine.script }}</textarea>
+    <textarea id="script" class="form-control" rows="12" readonly style="font-family: monospace; resize: vertical;">
+{{ machine.script }}
+    </textarea>
 
-    <div class="d-flex gap-2 mt-2">
-        <button class="btn btn-outline-primary" onclick="copyScript()">Copier</button>
-        <a class="btn btn-success" href="{{ url_for('ui.download_script', machine_id=machine.id) }}">Télécharger</a>
+    <div class="d-flex flex-wrap gap-2 mt-3">
+        <button class="btn btn-outline-primary" onclick="copyScript()">📋 Copier</button>
+        <a class="btn btn-success" href="{{ url_for('download_script', machine_id=machine.id) }}">⬇ Télécharger</a>
+        <form method="POST" action="{{ url_for('delete_machine', machine_id=machine.id) }}"
+              onsubmit="return confirm('Supprimer cette machine ?');" class="d-inline">
+            <button type="submit" class="btn btn-danger">🗑 Supprimer</button>
+        </form>
     </div>
 
-    <div id="copy-alert" class="alert alert-success position-fixed bottom-0 end-0 m-4 d-none" role="alert">
-    Script copié dans le presse-papiers !
+    <div id="copy-alert" class="alert alert-success position-fixed bottom-0 end-0 m-4 d-none shadow" role="alert">
+        Script copié dans le presse-papiers !
     </div>
 
-    <script>
-    function copyScript() {
-        const scriptText = document.getElementById("script").value;
-        navigator.clipboard.writeText(scriptText).then(() => {
+</div>
+
+<script>
+function copyScript() {
+    const scriptText = document.getElementById("script").value;
+    navigator.clipboard.writeText(scriptText).then(() => {
         const alertBox = document.getElementById("copy-alert");
         alertBox.classList.remove("d-none");
         setTimeout(() => {
             alertBox.classList.add("d-none");
         }, 2000);
-        }).catch((err) => {
+    }).catch((err) => {
         console.error("Erreur de copie :", err);
         alert("Échec de la copie du script.");
-        });
-    }
-    </script>
-    <form method="POST"
-        action="{{ url_for('ui.delete_machine', machine_id=machine.id) }}"
-        onsubmit="return confirm('Supprimer cette machine ?');"
-        class="mt-3">
-    <button type="submit" class="btn btn-danger">Supprimer cette machine</button>
-    </form>
-</div>
+    });
+}
+</script>
 {% endblock %}
