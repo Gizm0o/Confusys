@@ -6,15 +6,16 @@ This will make all the built-in rules visible in the web interface.
 
 import os
 import sys
-import yaml
 from pathlib import Path
+
+import yaml
 
 # Add the current directory to Python path
 sys.path.insert(0, os.path.abspath("."))
 
 from api import create_app, db
 from api.models.machine import Rule
-from api.models.user import User, Role
+from api.models.user import Role, User
 
 
 def load_all_rules():

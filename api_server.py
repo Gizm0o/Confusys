@@ -1,8 +1,10 @@
-from flask import Flask, jsonify
-from api import create_app
 import os
 import time
+
 import psycopg2
+from flask import Flask, jsonify
+
+from api import create_app
 
 
 # Create API-only app (without UI routes)

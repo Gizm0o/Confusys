@@ -256,9 +256,9 @@ def rules():
 
     # Use internal API calls instead of HTTP requests
     try:
-        from api.models.user import Role
-        from api.models.machine import Rule
         from api import db
+        from api.models.machine import Rule
+        from api.models.user import Role
 
         # Get roles
         roles = Role.query.all()
@@ -267,9 +267,10 @@ def rules():
         ]
 
         # Get rules based on user permissions
-        from api.routes.rule_routes import is_admin, user_can_access_rule
-        from api.models.user import User
         import jwt
+
+        from api.models.user import User
+        from api.routes.rule_routes import is_admin, user_can_access_rule
 
         # Decode token to get user
         data = jwt.decode(token, current_app.config["SECRET_KEY"], algorithms=["HS256"])
@@ -333,11 +334,12 @@ def upload_rules():
         file.seek(0)
 
         # Use internal API call
-        from api.models.machine import Rule
-        from api.models.user import Role, User
-        from api import db
         import jwt
         from werkzeug.utils import secure_filename
+
+        from api import db
+        from api.models.machine import Rule
+        from api.models.user import Role, User
 
         # Decode token to get user
         data = jwt.decode(token, current_app.config["SECRET_KEY"], algorithms=["HS256"])
@@ -457,10 +459,11 @@ def save_rules():
             return {"success": False, "error": f"Format YAML invalide: {str(e)}"}
 
         # Use internal API call
+        import jwt
+
+        from api import db
         from api.models.machine import Rule
         from api.models.user import Role, User
-        from api import db
-        import jwt
 
         # Decode token to get user
         data = jwt.decode(token, current_app.config["SECRET_KEY"], algorithms=["HS256"])
@@ -493,10 +496,11 @@ def download_rule(rule_id):
         return redirect(url_for("ui.login"))
 
     try:
+        import jwt
+
+        from api import db
         from api.models.machine import Rule
         from api.models.user import User
-        from api import db
-        import jwt
         from api.routes.rule_routes import user_can_access_rule
 
         # Decode token to get user
@@ -529,11 +533,12 @@ def delete_rule(rule_id):
         return redirect(url_for("ui.login"))
 
     try:
+        import jwt
+
+        from api import db
         from api.models.machine import Rule
         from api.models.user import User
-        from api import db
-        import jwt
-        from api.routes.rule_routes import user_can_access_rule, is_admin
+        from api.routes.rule_routes import is_admin, user_can_access_rule
 
         # Decode token to get user
         data = jwt.decode(token, current_app.config["SECRET_KEY"], algorithms=["HS256"])

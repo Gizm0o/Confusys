@@ -3,8 +3,9 @@
 Simple test script to check API functionality
 """
 
-import requests
 import json
+
+import requests
 
 API_BASE_URL = "http://localhost:5000"
 

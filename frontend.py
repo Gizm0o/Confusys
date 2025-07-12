@@ -1,19 +1,20 @@
+from io import BytesIO
+
+import jwt
+import requests
+import yaml
 from flask import (
     Flask,
+    Response,
+    flash,
+    jsonify,
+    redirect,
     render_template,
     request,
     session,
-    redirect,
     url_for,
-    flash,
-    jsonify,
-    Response,
 )
-import requests
-import yaml
 from werkzeug.utils import secure_filename
-import jwt
-from io import BytesIO
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 app.config["SECRET_KEY"] = "frontend-secret-key"

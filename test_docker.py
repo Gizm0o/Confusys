@@ -2,9 +2,10 @@
 """
 Test script for Docker setup
 """
-import requests
-import time
 import sys
+import time
+
+import requests
 
 
 def test_api_health():

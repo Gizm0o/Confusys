@@ -4,6 +4,7 @@ Script to fix the database schema by recreating tables with the technologies col
 """
 
 import os
+
 import psycopg2
 
 

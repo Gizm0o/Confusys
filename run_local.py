@@ -4,10 +4,10 @@ Local development script for Confusys
 Runs both API and Frontend servers for local development
 """
 
+import os
 import subprocess
 import sys
 import time
-import os
 from threading import Thread
 
 

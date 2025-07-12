@@ -3,9 +3,10 @@
 Test script to verify Docker containers are working
 """
 
-import requests
-import time
 import sys
+import time
+
+import requests
 
 
 def test_api():

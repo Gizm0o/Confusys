@@ -3,10 +3,10 @@
 Start script for Confusys - runs both API and Frontend servers
 """
 
+import os
 import subprocess
 import sys
 import time
-import os
 from threading import Thread
 
 

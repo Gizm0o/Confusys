@@ -5,6 +5,7 @@ Creates tables and default admin user
 """
 
 import os
+
 from api import create_app, db, init_db
 
 
