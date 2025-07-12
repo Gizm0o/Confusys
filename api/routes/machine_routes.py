@@ -151,6 +151,14 @@ def get_machine(current_user: User, machine_id: str) -> Union[Any, Tuple[Any, in
     machine = db.session.get(Machine, machine_id)
     if not machine or not user_can_access_machine(current_user, machine):
         return jsonify({"error": "Machine not found or access denied"}), 404
+    scan_reports = []
+    for file in machine.files:
+        for report in file.scan_reports:
+            scan_reports.append({
+                "scan_id": report.id,
+                "scanned_at": report.scanned_at.isoformat(),
+                "findings": report.findings
+            })
     return jsonify(
         {
             "id": machine.id,
@@ -159,6 +167,7 @@ def get_machine(current_user: User, machine_id: str) -> Union[Any, Tuple[Any, in
             "token": machine.token,
             "roles": [r.name for r in machine.roles],
             "technologies": machine.technologies or [],
+            "scan_reports": scan_reports,
         }
     )
 

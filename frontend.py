@@ -208,6 +208,20 @@ def view_machine(machine_id):
         info["script"] = script
         info["roles"] = info.get("roles", [])
         info["technologies"] = info.get("technologies", [])
+        info["scan_reports"] = info.get("scan_reports", [])
+
+        # Add score based on findings
+        for report in info.get("scan_reports", []):
+            severities = [f.get("severity", "").lower() for f in report["findings"]]
+            if "critical" in severities:
+                report["score"] = "danger"
+            elif "high" in severities:
+                report["score"] = "warning"
+            elif "medium" in severities:
+                report["score"] = "info"
+            else:
+                report["score"] = "success"
+
 
     except Exception as e:
         app.logger.error(f"Erreur détail machine : {e}")
