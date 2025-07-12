@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}Modifier la Règle - ConfuSys{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Modifier la Règle</h2>
+    <div>
+      <a href="{{ url_for('view_rule_detail', rule_id=rule.id) }}" class="btn btn-secondary me-2">
+        <i class="bi bi-arrow-left"></i> Retour
+      </a>
+      <a href="{{ url_for('view_rules') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-list"></i> Toutes les Règles
+      </a>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">Modifier: {{ rule.filename }}</h5>
+        </div>
+        <div class="card-body">
+          <form method="POST">
+            <div class="mb-3">
+              <label for="description" class="form-label">Description</label>
+              <textarea class="form-control" id="description" name="description" rows="3" 
+                        placeholder="Description de la règle...">{{ rule.description or "" }}</textarea>
+              <div class="form-text">Décrivez le but et l'objectif de cette règle.</div>
+            </div>
+
+            <div class="mb-3">
+              <label for="content" class="form-label">Contenu de la Règle (YAML)</label>
+              <textarea class="form-control" id="content" name="content" rows="20" 
+                        placeholder="Contenu YAML de la règle..." 
+                        style="font-family: 'Courier New', monospace; font-size: 0.9em;">{{ rule.content or "" }}</textarea>
+              <div class="form-text">
+                Modifiez directement le contenu YAML de la règle. Le format sera validé avant l'enregistrement.
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Technologies</label>
+              <div class="row">
+                {% set available_technologies = [
+                  'os_kernel', 'memory_cpu', 'disk_filesystems', 'processes_services',
+                  'network', 'routing', 'users_auth', 'history', 'packages', 'docker',
+                  'lxc', 'selinux', 'firewall', 'kernel_params', 'kernel_vuln',
+                  'shared_memory', 'udev', 'dbus', 'suid_sgid', 'world_writable',
+                  'capabilities', 'env_umask', 'exports', 'rpc', 'x_access'
+                ] %}
+                {% for tech in available_technologies %}
+                <div class="col-md-6 col-lg-4 mb-2">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="technologies" 
+                           value="{{ tech }}" id="tech_{{ tech }}"
+                           {% if tech in (rule.technologies or []) %}checked{% endif %}>
+                    <label class="form-check-label" for="tech_{{ tech }}">
+                      {{ tech.replace('_', ' ').title() }}
+                    </label>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+              <div class="form-text">Sélectionnez les technologies concernées par cette règle.</div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Rôles</label>
+              <div class="row">
+                {% for role in roles %}
+                <div class="col-md-6 col-lg-4 mb-2">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="roles" 
+                           value="{{ role.name }}" id="role_{{ role.id }}"
+                           {% if role.name in (rule.roles or []) %}checked{% endif %}>
+                    <label class="form-check-label" for="role_{{ role.id }}">
+                      {{ role.name }}
+                      {% if role.description %}
+                        <small class="text-muted d-block">{{ role.description }}</small>
+                      {% endif %}
+                    </label>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+              <div class="form-text">Sélectionnez les rôles autorisés à utiliser cette règle.</div>
+            </div>
+
+            <div class="d-flex justify-content-between">
+              <a href="{{ url_for('view_rule_detail', rule_id=rule.id) }}" class="btn btn-secondary">
+                <i class="bi bi-x"></i> Annuler
+              </a>
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check"></i> Enregistrer les Modifications
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-header">
+          <h6 class="card-title mb-0">Informations</h6>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <strong>Fichier:</strong><br>
+            <code>{{ rule.filename }}</code>
+          </div>
+          
+          <div class="mb-3">
+            <strong>Créé le:</strong><br>
+            {{ rule.created_at.strftime('%d/%m/%Y à %H:%M') if rule.created_at else "Date inconnue" }}
+          </div>
+          
+          <div class="mb-3">
+            <strong>Propriétaire:</strong><br>
+            {{ rule.owner or "Système" }}
+          </div>
+          
+                     <div class="alert alert-info">
+             <i class="bi bi-info-circle"></i>
+             <strong>Note:</strong> Vous pouvez maintenant modifier directement le contenu YAML de la règle. 
+             Les modifications seront validées avant l'enregistrement.
+           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const contentTextarea = document.getElementById('content');
+    const form = document.querySelector('form');
+    
+    // Real-time YAML validation
+    function validateYAML(content) {
+        try {
+            // Basic YAML validation
+            const lines = content.split('\n');
+            let indentLevel = 0;
+            let isValid = true;
+            let errorMessage = '';
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                const trimmedLine = line.trim();
+                
+                if (trimmedLine === '' || trimmedLine.startsWith('#')) {
+                    continue; // Skip empty lines and comments
+                }
+                
+                // Check for proper indentation
+                const currentIndent = line.length - line.trimStart().length;
+                if (currentIndent % 2 !== 0 && currentIndent > 0) {
+                    isValid = false;
+                    errorMessage = `Ligne ${i + 1}: Indentation incorrecte`;
+                    break;
+                }
+            }
+            
+            return { isValid, errorMessage };
+        } catch (e) {
+            return { isValid: false, errorMessage: e.message };
+        }
+    }
+    
+    // Update validation on content change
+    contentTextarea.addEventListener('input', function() {
+        const content = this.value;
+        const validation = validateYAML(content);
+        
+        // Remove previous validation classes
+        this.classList.remove('is-valid', 'is-invalid');
+        
+        if (content.trim() === '') {
+            return; // Don't validate empty content
+        }
+        
+        if (validation.isValid) {
+            this.classList.add('is-valid');
+        } else {
+            this.classList.add('is-invalid');
+        }
+    });
+    
+    // Form submission validation
+    form.addEventListener('submit', function(e) {
+        const content = contentTextarea.value;
+        const validation = validateYAML(content);
+        
+        if (content.trim() !== '' && !validation.isValid) {
+            e.preventDefault();
+            alert('Erreur de validation YAML: ' + validation.errorMessage);
+            return false;
+        }
+    });
+    
+    // Add syntax highlighting hints
+    contentTextarea.addEventListener('focus', function() {
+        if (this.value.trim() === '') {
+            this.placeholder = `# Exemple de structure YAML pour une règle
+rules:
+  - id: "example_rule"
+    description: "Description de la règle"
+    search: "pattern_to_search"
+    severity: "High"
+    category: "Security"
+    regex: false
+    case_sensitive: true`;
+        }
+    });
+});
+</script>
+{% endblock %} 

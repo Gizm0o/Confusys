@@ -540,3 +540,26 @@ def delete_rule(rule_id):
         flash("Erreur lors de la suppression", "danger")
     
     return redirect(url_for("ui.rules"))
+
+
+@ui_bp.route("/rules/view")
+def view_rules():
+    """Display all rules in a list view"""
+    token = session.get("token")
+    if not token:
+        return redirect(url_for("ui.login"))
+
+    headers = {"Authorization": f"Bearer {token}"}
+    try:
+        resp = requests.get("http://localhost:5000/rules", headers=headers)
+        if resp.status_code != 200:
+            flash("Erreur lors de la récupération des règles", "danger")
+            rules = []
+        else:
+            rules = resp.json()
+    except Exception as e:
+        current_app.logger.error(f"Failed to fetch rules: {e}")
+        flash("Erreur de connexion à l'API", "danger")
+        rules = []
+
+    return render_template("view_rules.html", rules=rules)

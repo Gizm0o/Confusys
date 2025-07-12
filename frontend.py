@@ -260,6 +260,107 @@ def rules():
 
     return render_template("rules.html", roles=roles, rules=rules)
 
+@app.route("/rules/view")
+def view_rules():
+    token = session.get("token")
+    if not token:
+        return redirect(url_for("login"))
+
+    headers = {"Authorization": f"Bearer {token}"}
+    try:
+        rules_resp = requests.get(f"{API_BASE_URL}/rules", headers=headers)
+        rules = rules_resp.json() if rules_resp.ok else []
+    except Exception:
+        flash("Erreur lors de la récupération des règles.", "danger")
+        return redirect(url_for("dashboard"))
+
+    return render_template("view_rules.html", rules=rules)
+
+@app.route("/rules/<rule_id>")
+def view_rule_detail(rule_id):
+    token = session.get("token")
+    if not token:
+        return redirect(url_for("login"))
+
+    headers = {"Authorization": f"Bearer {token}"}
+    try:
+        rule_resp = requests.get(f"{API_BASE_URL}/rules/{rule_id}", headers=headers)
+        if rule_resp.status_code == 200:
+            rule = rule_resp.json()
+            # Parse created_at if it exists
+            if rule.get("created_at"):
+                from datetime import datetime
+                try:
+                    rule["created_at"] = datetime.fromisoformat(rule["created_at"].replace('Z', '+00:00'))
+                except:
+                    rule["created_at"] = None
+            return render_template("rule_detail.html", rule=rule)
+        else:
+            flash("Règle non trouvée ou accès refusé.", "danger")
+            return redirect(url_for("view_rules"))
+    except Exception:
+        flash("Erreur lors de la récupération de la règle.", "danger")
+        return redirect(url_for("view_rules"))
+
+@app.route("/rules/<rule_id>/edit", methods=["GET", "POST"])
+def edit_rule(rule_id):
+    token = session.get("token")
+    if not token:
+        return redirect(url_for("login"))
+
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    if request.method == "GET":
+        try:
+            rule_resp = requests.get(f"{API_BASE_URL}/rules/{rule_id}", headers=headers)
+            roles_resp = requests.get(f"{API_BASE_URL}/roles", headers=headers)
+            
+            if rule_resp.status_code == 200:
+                rule = rule_resp.json()
+                # Parse created_at if it exists
+                if rule.get("created_at"):
+                    from datetime import datetime
+                    try:
+                        rule["created_at"] = datetime.fromisoformat(rule["created_at"].replace('Z', '+00:00'))
+                    except:
+                        rule["created_at"] = None
+                roles = roles_resp.json() if roles_resp.ok else []
+                return render_template("edit_rule.html", rule=rule, roles=roles)
+            else:
+                flash("Règle non trouvée ou accès refusé.", "danger")
+                return redirect(url_for("view_rules"))
+        except Exception:
+            flash("Erreur lors de la récupération de la règle.", "danger")
+            return redirect(url_for("view_rules"))
+    
+    # POST - Update rule
+    try:
+        description = request.form.get("description")
+        content = request.form.get("content")
+        roles = request.form.getlist("roles")
+        technologies = request.form.getlist("technologies")
+        
+        data = {"description": description}
+        if content:
+            data["content"] = content
+        if roles:
+            data["roles"] = roles
+        if technologies:
+            data["technologies"] = technologies
+        
+        resp = requests.put(f"{API_BASE_URL}/rules/{rule_id}", headers=headers, data=data)
+        
+        if resp.status_code == 200:
+            flash("Règle mise à jour avec succès.", "success")
+            return redirect(url_for("view_rule_detail", rule_id=rule_id))
+        else:
+            flash("Erreur lors de la mise à jour de la règle.", "danger")
+            return redirect(url_for("edit_rule", rule_id=rule_id))
+            
+    except Exception:
+        flash("Erreur de connexion.", "danger")
+        return redirect(url_for("edit_rule", rule_id=rule_id))
+
 @app.route("/rules/upload", methods=["POST"])
 def upload_rules():
     token = session.get("token")
@@ -294,6 +395,9 @@ def upload_rules():
         data = {"description": description}
         if roles:
             data["roles"] = roles
+        technologies = request.form.getlist("technologies")
+        if technologies:
+            data["technologies"] = technologies
         
         resp = requests.post(f"{API_BASE_URL}/rules", headers=headers, files=files, data=data)
         
@@ -396,6 +500,9 @@ def save_rules():
         data = {"description": description}
         if roles:
             data["roles"] = roles
+        technologies = request.form.getlist("technologies")
+        if technologies:
+            data["technologies"] = technologies
         
         resp = requests.post(f"{API_BASE_URL}/rules", headers=headers, files=files, data=data)
         

@@ -63,11 +63,13 @@ def upload_rule(current_user: User) -> Union[Any, Tuple[Any, int]]:
     data = file.read()
     description = request.form.get("description")
     role_names = request.form.getlist("roles")
+    technologies = request.form.getlist("technologies")
     roles = Role.query.filter(Role.name.in_(role_names)).all() if role_names else []
     rule = Rule(
         filename=filename, data=data, description=description, user_id=current_user.id
     )
     rule.roles = roles
+    rule.technologies = technologies
     db.session.add(rule)
     db.session.commit()
     return (
@@ -77,6 +79,7 @@ def upload_rule(current_user: User) -> Union[Any, Tuple[Any, int]]:
                 "filename": rule.filename,
                 "description": rule.description,
                 "roles": [r.name for r in rule.roles],
+                "technologies": rule.technologies or [],
             }
         ),
         201,
@@ -100,8 +103,10 @@ def list_rules(current_user: User) -> Any:
                 "id": r.id,
                 "filename": r.filename,
                 "description": r.description,
+                "technologies": r.technologies or [],
                 "roles": [role.name for role in r.roles],
                 "owner": r.user_id,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
             }
             for r in rules
         ]
@@ -128,8 +133,11 @@ def get_rule(current_user: User, rule_id: str) -> Union[Any, Tuple[Any, int]]:
             "id": rule.id,
             "filename": rule.filename,
             "description": rule.description,
+            "technologies": rule.technologies or [],
             "roles": [role.name for role in rule.roles],
             "owner": rule.user_id,
+            "content": rule.data.decode('utf-8') if rule.data else "",
+            "created_at": rule.created_at.isoformat() if rule.created_at else None,
         }
     )
 
@@ -157,12 +165,30 @@ def update_rule(current_user: User, rule_id: str) -> Union[Any, Tuple[Any, int]]
         role_names = request.form.getlist("roles") or request.form.getlist("roles[]")
         roles = Role.query.filter(Role.name.in_(role_names)).all() if role_names else []
         rule.roles = roles
+    # Update technologies
+    if "technologies" in request.form or "technologies[]" in request.form:
+        technologies = request.form.getlist("technologies") or request.form.getlist("technologies[]")
+        rule.technologies = technologies
+    # Update file content
+    if "content" in request.form:
+        try:
+            # Validate YAML content
+            import yaml
+            content = request.form["content"]
+            yaml.safe_load(content)  # This will raise an exception if invalid
+            rule.data = content.encode('utf-8')
+        except yaml.YAMLError as e:
+            return jsonify({"error": f"Invalid YAML content: {str(e)}"}), 400
+        except Exception as e:
+            return jsonify({"error": f"Error updating content: {str(e)}"}), 400
+    
     # Update file
     if "file" in request.files:
         file = request.files["file"]
         if file and file.filename:
             rule.filename = secure_filename(str(file.filename))
             rule.data = file.read()
+    
     db.session.commit()
     return jsonify({"message": "Rule updated successfully"})
 

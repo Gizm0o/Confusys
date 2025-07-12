@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Toutes les Règles - ConfuSys{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Toutes les Règles</h2>
+    <a href="{{ url_for('rules') }}" class="btn btn-primary">
+      <i class="bi bi-plus"></i> Ajouter une Règle
+    </a>
+  </div>
+
+  {% if rules %}
+  <div class="table-responsive">
+    <table class="table table-striped table-hover">
+      <thead class="table-dark">
+        <tr>
+          <th>Nom du Fichier</th>
+          <th>Description</th>
+          <th>Technologies</th>
+          <th>Rôles</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for rule in rules %}
+        <tr>
+          <td>{{ rule.filename }}</td>
+          <td>{{ rule.description or "Aucune description" }}</td>
+          <td>
+            {% if rule.technologies %}
+              {% if rule.technologies|length > 3 %}
+                <span data-bs-toggle="tooltip" title="{{ rule.technologies|join(', ') }}">
+                  {{ rule.technologies|length }} technologies
+                </span>
+              {% else %}
+                {{ rule.technologies|join(', ') }}
+              {% endif %}
+            {% else %}
+              <em>Aucune</em>
+            {% endif %}
+          </td>
+          <td>
+            {% if rule.roles %}
+              {{ rule.roles|join(", ") }}
+            {% else %}
+              <em>Aucun</em>
+            {% endif %}
+          </td>
+          <td>
+            <a class="btn btn-sm btn-primary"
+               href="{{ url_for('view_rule_detail', rule_id=rule.id) }}"
+               title="Voir les détails">
+              <i class="bi bi-eye"></i>
+            </a>
+            <a class="btn btn-sm btn-warning"
+               href="{{ url_for('edit_rule', rule_id=rule.id) }}"
+               title="Modifier">
+              <i class="bi bi-pencil"></i>
+            </a>
+            <a class="btn btn-sm btn-info"
+               href="{{ url_for('download_rule', rule_id=rule.id) }}"
+               title="Télécharger">
+              <i class="bi bi-download"></i>
+            </a>
+            {% if rule.owner == session.get('user_id') or session.get('is_admin') %}
+            <form method="POST"
+                  action="{{ url_for('delete_rule', rule_id=rule.id) }}"
+                  style="display:inline;"
+                  onsubmit="return confirm('Supprimer cette règle ?');">
+              <button type="submit" class="btn btn-sm btn-danger" title="Supprimer">
+                <i class="bi bi-trash"></i>
+              </button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <div class="alert alert-info" role="alert">
+      Aucune règle disponible pour l'instant.
+    </div>
+  {% endif %}
+</div>
+
+<script>
+// Initialize tooltips
+document.addEventListener('DOMContentLoaded', function() {
+  var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+  var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl)
+  })
+});
+</script>
+{% endblock %} 
