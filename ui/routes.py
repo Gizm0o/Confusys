@@ -8,6 +8,7 @@ from flask import (
     request,
     session,
     url_for,
+    Response,
 )
 
 from . import ui_bp
@@ -196,3 +197,49 @@ def profile():
 @ui_bp.route("/about")
 def about():
     return render_template("about.html")
+
+
+@ui_bp.route("/machines/<machine_id>/view")
+def view_machine(machine_id):
+    token = session.get("token")
+    if not token:
+        return redirect(url_for("ui.login"))
+
+    headers = {"Authorization": f"Bearer {token}"}
+    details_url = f"http://localhost:5000/machines/{machine_id}"
+    script_url = f"http://localhost:5000/machines/{machine_id}/script"
+
+    try:
+        info = requests.get(details_url, headers=headers).json()
+        script = requests.get(script_url, headers=headers).json()["script"]
+        info["script"] = script
+        info["technologies"] = info.get("technologies", [])
+    except Exception:
+        flash("Erreur lors du chargement des détails de la machine.", "danger")
+        return redirect(url_for("ui.dashboard"))
+
+    return render_template("machine_detail.html", machine=info)
+
+
+@ui_bp.route("/machines/<machine_id>/script/download")
+def download_script(machine_id):
+    token = session.get("token")
+    if not token:
+        return redirect(url_for("ui.login"))
+
+    headers = {"Authorization": f"Bearer {token}"}
+    backend_url = f"http://localhost:5000/machines/{machine_id}/script/download"
+
+    response = requests.get(backend_url, headers=headers, stream=True)
+    if response.status_code == 200:
+        return Response(
+            response.iter_content(chunk_size=1024),
+            content_type=response.headers.get("Content-Type", "application/octet-stream"),
+            headers={
+                "Content-Disposition": response.headers.get("Content-Disposition", f'attachment; filename="audit_script.sh"')
+            }
+        )
+    else:
+        flash("Erreur lors du téléchargement du script.", "danger")
+        return redirect(url_for("ui.view_machine", machine_id=machine_id))
+

@@ -50,16 +50,20 @@
             {% endif %}
           </td>
           <td>
-              <a class="btn btn-sm btn-success"
-                  href="http://localhost:5000/machines/{{ m.id }}/script"
-                  target="_blank">Télécharger</a>
-
-              <form method="POST"
-                    action="{{ url_for('ui.delete_machine', machine_id=m.id) }}"
-                    style="display:inline;"
-                    onsubmit="return confirm('Supprimer cette machine ?');">
-                  <button type="submit" class="btn btn-sm btn-danger">Supprimer</button>
-              </form>
+            <a class="btn btn-sm btn-primary"
+              href="{{ url_for('ui.view_machine', machine_id=m.id) }}">
+              Détails
+            </a>
+            <a class="btn btn-sm btn-success"
+              href="http://localhost:5000/machines/{{ m.id }}/script"
+              target="_blank">Télécharger
+            </a>
+            <form method="POST"
+                  action="{{ url_for('ui.delete_machine', machine_id=m.id) }}"
+                  style="display:inline;"
+                  onsubmit="return confirm('Supprimer cette machine ?');">
+                <button type="submit" class="btn btn-sm btn-danger">Supprimer</button>
+            </form>
           </td>
         </tr>
         {% endfor %}
