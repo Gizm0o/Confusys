@@ -49,10 +49,11 @@ def test_rule_upload_download_update_delete(client):
         headers={"Authorization": f"Bearer {admin_token}"},
     )
     role_id = resp.get_json()["id"]
-    # Register user and assign role
+    # Create user via admin and assign role
     client.post(
-        "/user/register",
+        "/user/users",
         json={"username": "user", "email": "user@example.com", "password": "pass"},
+        headers={"Authorization": f"Bearer {admin_token}"},
     )
     resp = client.post("/user/login", json={"username": "user", "password": "pass"})
     token = resp.get_json()["token"]
@@ -102,10 +103,11 @@ def test_rule_upload_download_update_delete(client):
 
 def test_rule_upload_errors_and_access(client):
     admin_token = get_admin_token(client)
-    # Register user
+    # Create user via admin
     client.post(
-        "/user/register",
+        "/user/users",
         json={"username": "user2", "email": "user2@example.com", "password": "pass"},
+        headers={"Authorization": f"Bearer {admin_token}"},
     )
     resp = client.post("/user/login", json={"username": "user2", "password": "pass"})
     token = resp.get_json()["token"]
@@ -135,8 +137,9 @@ def test_rule_upload_errors_and_access(client):
     )
     role_id = resp.get_json()["id"]
     client.post(
-        "/user/register",
+        "/user/users",
         json={"username": "user3", "email": "user3@example.com", "password": "pass"},
+        headers={"Authorization": f"Bearer {admin_token}"},
     )
     resp = client.post("/user/login", json={"username": "user3", "password": "pass"})
     token3 = resp.get_json()["token"]
@@ -160,8 +163,9 @@ def test_rule_upload_errors_and_access(client):
     rule_id = resp.get_json()["id"]
     # Try to delete as another user
     client.post(
-        "/user/register",
+        "/user/users",
         json={"username": "user4", "email": "user4@example.com", "password": "pass"},
+        headers={"Authorization": f"Bearer {admin_token}"},
     )
     resp = client.post("/user/login", json={"username": "user4", "password": "pass"})
     token4 = resp.get_json()["token"]

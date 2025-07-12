@@ -28,48 +28,68 @@ def get_admin_token(client):
     return resp.get_json()["token"]
 
 
-def test_user_registration_and_login(client):
-    # Register user
+def test_user_creation_and_login(client):
+    # Get admin token
+    admin_token = get_admin_token(client)
+    
+    # Create user via admin API
     resp = client.post(
-        "/user/register",
+        "/user/users",
         json={
             "username": "testuser",
             "email": "test@example.com",
             "password": "testpassword",
         },
+        headers={"Authorization": f"Bearer {admin_token}"},
     )
     assert resp.status_code == 201
-    # Duplicate registration
+    
+    # Try to create duplicate user
     resp = client.post(
-        "/user/register",
+        "/user/users",
         json={
             "username": "testuser",
             "email": "test@example.com",
             "password": "testpassword",
         },
+        headers={"Authorization": f"Bearer {admin_token}"},
     )
-    assert resp.status_code in (400, 409)
+    assert resp.status_code == 409
+    
     # Login with correct password
     resp = client.post(
         "/user/login", json={"username": "testuser", "password": "testpassword"}
     )
     assert resp.status_code == 200
+    
     # Login with wrong password
     resp = client.post(
         "/user/login", json={"username": "testuser", "password": "wrongpass"}
     )
     assert resp.status_code == 401
+    
     # Login with non-existent user
     resp = client.post("/user/login", json={"username": "nouser", "password": "nopass"})
     assert resp.status_code == 401
-    # Register with missing fields
+    
+    # Try to create user without admin token
     resp = client.post(
-        "/user/register", json={"username": "", "email": "", "password": ""}
+        "/user/users",
+        json={
+            "username": "unauthorized",
+            "email": "unauthorized@example.com",
+            "password": "pass",
+        },
+    )
+    assert resp.status_code == 401
+    
+    # Create user with missing required fields
+    resp = client.post(
+        "/user/users",
+        json={
+            "username": "",
+            "password": "",
+        },
+        headers={"Authorization": f"Bearer {admin_token}"},
     )
     assert resp.status_code == 400
-    # Register with invalid email
-    resp = client.post(
-        "/user/register",
-        json={"username": "bademail", "email": "notanemail", "password": "pass"},
-    )
-    assert resp.status_code in (400, 201)  # Accept 400 if email validation is enforced

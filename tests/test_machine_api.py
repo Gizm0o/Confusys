@@ -174,10 +174,12 @@ def test_machine_script_download_and_technologies(client):
 
 
 def test_machine_access_control(client):
-    # Register as normal user
+    # Create user via admin
+    admin_token = get_admin_token(client)
     client.post(
-        "/user/register",
+        "/user/users",
         json={"username": "user", "email": "user@example.com", "password": "pass"},
+        headers={"Authorization": f"Bearer {admin_token}"},
     )
     resp = client.post("/user/login", json={"username": "user", "password": "pass"})
     token = resp.get_json()["token"]
@@ -278,9 +280,11 @@ def test_scan_report_storage_and_endpoints(client):
 
 def test_scan_report_permissions_and_edge_cases(client):
     # Setup admin and user
+    admin_token = get_admin_token(client)
     client.post(
-        "/user/register",
+        "/user/users",
         json={"username": "user", "email": "user@example.com", "password": "pass"},
+        headers={"Authorization": f"Bearer {admin_token}"},
     )
     resp = client.post("/user/login", json={"username": "user", "password": "pass"})
     user_token = resp.get_json()["token"]
