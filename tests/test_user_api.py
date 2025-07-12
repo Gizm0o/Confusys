@@ -31,7 +31,7 @@ def get_admin_token(client):
 def test_user_creation_and_login(client):
     # Get admin token
     admin_token = get_admin_token(client)
-    
+
     # Create user via admin API
     resp = client.post(
         "/user/users",
@@ -43,7 +43,7 @@ def test_user_creation_and_login(client):
         headers={"Authorization": f"Bearer {admin_token}"},
     )
     assert resp.status_code == 201
-    
+
     # Try to create duplicate user
     resp = client.post(
         "/user/users",
@@ -55,23 +55,23 @@ def test_user_creation_and_login(client):
         headers={"Authorization": f"Bearer {admin_token}"},
     )
     assert resp.status_code == 409
-    
+
     # Login with correct password
     resp = client.post(
         "/user/login", json={"username": "testuser", "password": "testpassword"}
     )
     assert resp.status_code == 200
-    
+
     # Login with wrong password
     resp = client.post(
         "/user/login", json={"username": "testuser", "password": "wrongpass"}
     )
     assert resp.status_code == 401
-    
+
     # Login with non-existent user
     resp = client.post("/user/login", json={"username": "nouser", "password": "nopass"})
     assert resp.status_code == 401
-    
+
     # Try to create user without admin token
     resp = client.post(
         "/user/users",
@@ -82,7 +82,7 @@ def test_user_creation_and_login(client):
         },
     )
     assert resp.status_code == 401
-    
+
     # Create user with missing required fields
     resp = client.post(
         "/user/users",
