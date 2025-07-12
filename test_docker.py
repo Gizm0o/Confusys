@@ -6,6 +6,7 @@ import requests
 import time
 import sys
 
+
 def test_api_health():
     """Test if the API server is running"""
     try:
@@ -20,6 +21,7 @@ def test_api_health():
         print(f"❌ API server is not accessible: {e}")
         return False
 
+
 def test_frontend_health():
     """Test if the frontend server is running"""
     try:
@@ -33,6 +35,7 @@ def test_frontend_health():
     except requests.exceptions.RequestException as e:
         print(f"❌ Frontend server is not accessible: {e}")
         return False
+
 
 def test_database_connection():
     """Test database connection"""
@@ -53,18 +56,19 @@ def test_database_connection():
         print(f"❌ Could not test database connection: {e}")
         return False
 
+
 def main():
     print("Testing ConfuSys Docker setup...")
     print("=" * 40)
-    
+
     # Wait a bit for services to start
     print("Waiting for services to start...")
     time.sleep(10)
-    
+
     api_ok = test_api_health()
     frontend_ok = test_frontend_health()
     db_ok = test_database_connection()
-    
+
     print("=" * 40)
     if api_ok and frontend_ok and db_ok:
         print("🎉 All services are running correctly!")
@@ -77,5 +81,6 @@ def main():
         print("❌ Some services are not running correctly")
         return 1
 
+
 if __name__ == "__main__":
-    sys.exit(main()) 
+    sys.exit(main())

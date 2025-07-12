@@ -136,7 +136,7 @@ def get_rule(current_user: User, rule_id: str) -> Union[Any, Tuple[Any, int]]:
             "technologies": rule.technologies or [],
             "roles": [role.name for role in rule.roles],
             "owner": rule.user_id,
-            "content": rule.data.decode('utf-8') if rule.data else "",
+            "content": rule.data.decode("utf-8") if rule.data else "",
             "created_at": rule.created_at.isoformat() if rule.created_at else None,
         }
     )
@@ -167,28 +167,31 @@ def update_rule(current_user: User, rule_id: str) -> Union[Any, Tuple[Any, int]]
         rule.roles = roles
     # Update technologies
     if "technologies" in request.form or "technologies[]" in request.form:
-        technologies = request.form.getlist("technologies") or request.form.getlist("technologies[]")
+        technologies = request.form.getlist("technologies") or request.form.getlist(
+            "technologies[]"
+        )
         rule.technologies = technologies
     # Update file content
     if "content" in request.form:
         try:
             # Validate YAML content
             import yaml
+
             content = request.form["content"]
             yaml.safe_load(content)  # This will raise an exception if invalid
-            rule.data = content.encode('utf-8')
+            rule.data = content.encode("utf-8")
         except yaml.YAMLError as e:
             return jsonify({"error": f"Invalid YAML content: {str(e)}"}), 400
         except Exception as e:
             return jsonify({"error": f"Error updating content: {str(e)}"}), 400
-    
+
     # Update file
     if "file" in request.files:
         file = request.files["file"]
         if file and file.filename:
             rule.filename = secure_filename(str(file.filename))
             rule.data = file.read()
-    
+
     db.session.commit()
     return jsonify({"message": "Rule updated successfully"})
 
