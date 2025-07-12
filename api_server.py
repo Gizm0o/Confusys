@@ -16,9 +16,9 @@ def create_api_app():
 
     # Use PostgreSQL in Docker, SQLite for local development
     if os.environ.get("DOCKER_ENV"):
-        app.config["SQLALCHEMY_DATABASE_URI"] = (
-            "postgresql://confusys:confusys@db:5432/confusys"
-        )
+        app.config[
+            "SQLALCHEMY_DATABASE_URI"
+        ] = "postgresql://confusys:confusys@db:5432/confusys"
     else:
         app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///confusys.db"
 

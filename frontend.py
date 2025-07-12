@@ -1,22 +1,8 @@
 from io import BytesIO
 
 import jwt
-from io import BytesIO
-
-import jwt
 import requests
 import yaml
-from flask import (
-    Flask,
-    Response,
-    flash,
-    jsonify,
-    redirect,
-    render_template,
-    request,
-    session,
-    url_for,
-)
 from flask import (
     Flask,
     Response,
@@ -36,7 +22,6 @@ app.config["API_URL"] = "http://api:5000"
 
 # API URL configuration
 import os
-
 
 API_BASE_URL = os.environ.get("API_URL", "http://api:5000")
 
@@ -150,7 +135,6 @@ def login():
     return render_template("login.html")
 
 
-
 @app.route("/logout")
 def logout():
     session.clear()
@@ -239,7 +223,6 @@ def add_machine():
     return render_template("add_machine.html", roles=roles, technologies=technologies)
 
 
-
 @app.route("/machines/delete/<machine_id>", methods=["POST"])
 @login_required
 def delete_machine(machine_id):
@@ -257,13 +240,11 @@ def delete_machine(machine_id):
     return redirect(url_for("dashboard"))
 
 
-
 @app.route("/profile")
 @login_required
 def profile():
     username = session.get("username", "Inconnu")
     return render_template("profile.html", username=username)
-
 
 
 @app.route("/about")
@@ -290,7 +271,6 @@ def view_machine(machine_id):
 
         info = info_resp.json()
         script = script_resp.json().get("script", "")
-
 
         info["script"] = script
         info["roles"] = info.get("roles", [])
@@ -366,20 +346,16 @@ def upload_rules():
     token = session.get("token")
     headers = {"Authorization": f"Bearer {token}"}
 
-
     try:
         file = request.files.get("file")
         description = request.form.get("description")
         roles = request.form.getlist("roles")
 
-
         if not file or not file.filename:
             return {"success": False, "error": "Aucun fichier sélectionné"}
 
-
         if not description:
             return {"success": False, "error": "Description requise"}
-
 
         # Validate YAML format
         try:
@@ -388,10 +364,8 @@ def upload_rules():
         except yaml.YAMLError as e:
             return {"success": False, "error": f"Format YAML invalide: {str(e)}"}
 
-
         # Reset file pointer for upload
         file.seek(0)
-
 
         # Prepare form data for API
         files = {"file": (file.filename, file, file.content_type)}
@@ -416,7 +390,6 @@ def upload_rules():
         return {"success": False, "error": f"Erreur: {str(e)}"}
 
 
-
 @app.route("/rules/validate", methods=["POST"])
 @login_required
 def validate_rules():
@@ -429,9 +402,7 @@ def validate_rules():
         if not content.strip():
             return {"valid": False, "errors": ["Contenu vide"]}
 
-
         errors = []
-
 
         # Parse YAML
         try:
@@ -439,11 +410,9 @@ def validate_rules():
         except yaml.YAMLError as e:
             return {"valid": False, "errors": [f"Erreur de syntaxe YAML: {str(e)}"]}
 
-
         # Validate structure
         if not isinstance(data, dict):
             errors.append("Le contenu doit être un objet YAML")
-
 
         if "rules" not in data:
             errors.append("Le fichier doit contenir une section 'rules'")
@@ -455,7 +424,6 @@ def validate_rules():
                 if not isinstance(rule, dict):
                     errors.append(f"Règle {i+1}: doit être un objet")
                     continue
-
 
                 # Required fields
                 required_fields = [
@@ -476,7 +444,6 @@ def validate_rules():
                     if field not in rule:
                         errors.append(f"Règle {i+1}: champ '{field}' requis")
 
-
                 # Validate severity
                 if "severity" in rule:
                     valid_severities = ["Critical", "High", "Medium", "Low"]
@@ -495,13 +462,10 @@ def validate_rules():
                     if field in rule and not isinstance(rule[field], bool):
                         errors.append(f"Règle {i+1}: '{field}' doit être un booléen")
 
-
         return {"valid": len(errors) == 0, "errors": errors}
-
 
     except Exception as e:
         return {"valid": False, "errors": [f"Erreur de validation: {str(e)}"]}
-
 
 
 @app.route("/rules/save", methods=["POST"])
@@ -510,27 +474,22 @@ def save_rules():
     token = session.get("token")
     headers = {"Authorization": f"Bearer {token}"}
 
-
     try:
         content = request.form.get("content", "")
         description = request.form.get("description")
         roles = request.form.getlist("roles")
 
-
         if not content.strip():
             return {"success": False, "error": "Contenu vide"}
 
-
         if not description:
             return {"success": False, "error": "Description requise"}
-
 
         # Validate YAML format
         try:
             yaml.safe_load(content)
         except yaml.YAMLError as e:
             return {"success": False, "error": f"Format YAML invalide: {str(e)}"}
-
 
         # Create a temporary file for upload
         file_data = BytesIO(content.encode("utf-8"))
@@ -565,13 +524,11 @@ def save_rules():
         return {"success": False, "error": f"Erreur: {str(e)}"}
 
 
-
 @app.route("/rules/download/<rule_id>")
 @login_required
 def download_rule(rule_id):
     token = session.get("token")
     headers = {"Authorization": f"Bearer {token}"}
-
 
     try:
         resp = requests.get(
@@ -597,11 +554,9 @@ def download_rule(rule_id):
             flash("Erreur lors du téléchargement", "danger")
             return redirect(url_for("rules"))
 
-
     except Exception:
         flash("Erreur de connexion", "danger")
         return redirect(url_for("rules"))
-
 
 
 @app.route("/rules/delete/<rule_id>", methods=["POST"])
