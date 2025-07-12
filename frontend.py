@@ -1,3 +1,4 @@
+import os
 from io import BytesIO
 
 import jwt
@@ -18,11 +19,8 @@ from werkzeug.utils import secure_filename
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 app.config["SECRET_KEY"] = "frontend-secret-key"
-app.config["API_URL"] = "http://api:5000"
 
 # API URL configuration
-import os
-
 API_BASE_URL = os.environ.get("API_URL", "http://api:5000")
 
 
@@ -54,45 +52,13 @@ def login_required(f):
 # Make helper functions available to templates
 app.jinja_env.globals.update(is_admin=is_admin, has_role=has_role)
 
-# Configure Flask app for static files
-app.static_folder = "static"
-app.static_url_path = "/static"
-
 
 @app.route("/")
 def home():
     return redirect(url_for("login"))
 
 
-@app.route("/register", methods=["GET", "POST"])
-def register():
-    if request.method == "POST":
-        username = request.form.get("username")
-        email = request.form.get("email")
-        password = request.form.get("password")
-        confirm_password = request.form.get("confirm_password")
 
-        if not username or not email or not password:
-            flash("Tous les champs sont requis.", "danger")
-            return redirect(url_for("register"))
-
-        if password != confirm_password:
-            flash("Les mots de passe ne correspondent pas.", "danger")
-            return redirect(url_for("register"))
-
-        response = requests.post(
-            f"{API_BASE_URL}/user/register",
-            json={"username": username, "email": email, "password": password},
-        )
-
-        if response.status_code == 201:
-            flash("Inscription réussie. Connectez-vous !", "success")
-            return redirect(url_for("login"))
-        else:
-            flash("Erreur lors de l'inscription.", "danger")
-            return redirect(url_for("register"))
-
-    return render_template("register.html")
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -433,13 +399,6 @@ def validate_rules():
                     "severity",
                     "category",
                 ]
-                required_fields = [
-                    "id",
-                    "description",
-                    "search",
-                    "severity",
-                    "category",
-                ]
                 for field in required_fields:
                     if field not in rule:
                         errors.append(f"Règle {i+1}: champ '{field}' requis")
@@ -448,10 +407,6 @@ def validate_rules():
                 if "severity" in rule:
                     valid_severities = ["Critical", "High", "Medium", "Low"]
                     if rule["severity"] not in valid_severities:
-                        errors.append(
-                            f"Règle {i+1}: sévérité invalide. Valeurs autorisées: {', '.join(valid_severities)}"
-                        )
-
                         errors.append(
                             f"Règle {i+1}: sévérité invalide. Valeurs autorisées: {', '.join(valid_severities)}"
                         )
@@ -494,8 +449,6 @@ def save_rules():
         # Create a temporary file for upload
         file_data = BytesIO(content.encode("utf-8"))
 
-        file_data = BytesIO(content.encode("utf-8"))
-
         # Prepare form data for API
         files = {"file": ("custom_rules.yml", file_data, "application/x-yaml")}
         data = {"description": description}
@@ -510,11 +463,6 @@ def save_rules():
             return {"success": True}
         else:
             error_data = resp.json() if resp.content else {}
-            return {
-                "success": False,
-                "error": error_data.get("error", "Erreur lors de la sauvegarde"),
-            }
-
             return {
                 "success": False,
                 "error": error_data.get("error", "Erreur lors de la sauvegarde"),
@@ -535,17 +483,10 @@ def download_rule(rule_id):
             f"{API_BASE_URL}/rules/{rule_id}?download=1", headers=headers
         )
 
-        resp = requests.get(
-            f"{API_BASE_URL}/rules/{rule_id}?download=1", headers=headers
-        )
-
         if resp.status_code == 200:
             return Response(
                 resp.content,
                 mimetype="application/x-yaml",
-                headers={
-                    "Content-Disposition": f"attachment; filename=rule_{rule_id}.yml"
-                },
                 headers={
                     "Content-Disposition": f"attachment; filename=rule_{rule_id}.yml"
                 },
@@ -581,6 +522,4 @@ def delete_rule(rule_id):
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=3000, host="0.0.0.0")
-
     app.run(debug=True, port=3000, host="0.0.0.0")
