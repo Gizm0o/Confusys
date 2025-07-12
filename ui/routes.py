@@ -1,7 +1,14 @@
 # ui/routes.py
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 import requests
-from flask import current_app
+from flask import (
+    current_app,
+    flash,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
 
 from . import ui_bp
 
@@ -99,6 +106,7 @@ def dashboard():
                 for m in raw_machines
             ]
     except Exception as e:
+        current_app.logger.error(f"Failed to fetch machines: {e}")
         machines = []
 
     return render_template("dashboard.html", machines=machines)
@@ -174,3 +182,17 @@ def delete_machine(machine_id):
         flash("Erreur de connexion à l'API.", "danger")
 
     return redirect(url_for("ui.dashboard"))
+
+
+@ui_bp.route("/profile")
+def profile():
+    if "token" not in session:
+        return redirect(url_for("ui.login"))
+
+    username = session.get("username", "Inconnu")
+    return render_template("profile.html", username=username)
+
+
+@ui_bp.route("/about")
+def about():
+    return render_template("about.html")

@@ -6,7 +6,6 @@
 <div class="container mt-4">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Bienvenue, {{ session.username }} !</h2>
-    <a href="{{ url_for('ui.logout') }}" class="btn btn-outline-secondary">Déconnexion</a>
   </div>
 
   <div class="mb-4">
@@ -39,7 +38,17 @@
               <em>Aucun</em>
             {% endif %}
           </td>
-          <td>{{ m.technologies|join(', ') }}</td>
+          <td>
+            {% if m.technologies|length > 3 %}
+              <span data-bs-toggle="tooltip" title="{{ m.technologies|join(', ') }}">
+                {{ m.technologies|length }} technologies sélectionnées
+              </span>
+            {% elif m.technologies %}
+              {{ m.technologies|join(', ') }}
+            {% else %}
+              <em>Aucune</em>
+            {% endif %}
+          </td>
           <td>
               <a class="btn btn-sm btn-success"
                   href="http://localhost:5000/machines/{{ m.id }}/script"

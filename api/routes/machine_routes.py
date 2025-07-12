@@ -93,7 +93,11 @@ def register_machine(current_user: User) -> Tuple[Any, int]:
     # Generate the custom audit script
     script = generate_audit_script(technologies)
     machine = Machine(
-        name=name, description=description, user_id=current_user.id, script=script
+        name=name,
+        description=description,
+        user_id=current_user.id,
+        script=script,
+        technologies=technologies,
     )
     db.session.add(machine)
     db.session.commit()
@@ -123,6 +127,7 @@ def list_machines(current_user: User) -> Any:
                 "description": m.description,
                 "token": m.token,
                 "roles": [r.name for r in m.roles],
+                "technologies": m.technologies or [],
             }
             for m in machines
         ]

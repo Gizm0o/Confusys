@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://cdn.jsdelivr.net;">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}ConfuSys{% endblock %}</title>
   <link rel="icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
@@ -11,10 +12,32 @@
 <body>
   <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
     <div class="container-fluid">
-      <a class="navbar-brand" href="/">
-        <img src="{{ url_for('static', filename='img/logo_navbar.png') }}" alt="Logo" height="40" class="d-inline-block align-text-top">
-        <strong>ConfuSys</strong>
-      </a>
+      {% if session.token %}
+        <a class="navbar-brand" href="{{ url_for('ui.dashboard') }}">
+          <img src="{{ url_for('static', filename='img/logo_navbar.png') }}" alt="ConfuSys" height="40" class="d-inline-block align-text-top">
+          <strong>ConfuSys</strong>
+        </a>
+      {% else %}
+        <span class="navbar-brand">
+          <img src="{{ url_for('static', filename='img/logo_navbar.png') }}" alt="ConfuSys" height="40" class="d-inline-block align-text-top">
+          <strong>ConfuSys</strong>
+        </span>
+      {% endif %}
+      
+      {% if session.username %}
+      <div class="dropdown ms-auto">
+        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
+          👤 {{ session.username }}
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+          <li><a class="dropdown-item" href="{{ url_for('ui.profile') }}">Profil</a></li>
+          <li><a class="dropdown-item" href="{{ url_for('ui.about') }}">À propos</a></li>
+          <li><a class="dropdown-item" href="/swagger" target="_blank">Docs API</a></li>
+          <li><hr class="dropdown-divider"></li>
+          <li><a class="dropdown-item" href="{{ url_for('ui.logout') }}">Déconnexion</a></li>
+        </ul>
+      </div>
+      {% endif %}
     </div>
   </nav>
 
@@ -23,5 +46,13 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+  });
+</script>
 </body>
 </html>
