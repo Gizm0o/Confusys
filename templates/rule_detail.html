@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Détails de la Règle - ConfuSys{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Détails de la Règle</h2>
+    <div>
+      <a href="{{ url_for('edit_rule', rule_id=rule.id) }}" class="btn btn-warning me-2">
+        <i class="bi bi-pencil"></i> Modifier
+      </a>
+      <a href="{{ url_for('download_rule', rule_id=rule.id) }}" class="btn btn-info me-2">
+        <i class="bi bi-download"></i> Télécharger
+      </a>
+      <a href="{{ url_for('view_rules') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Retour
+      </a>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">{{ rule.filename }}</h5>
+        </div>
+        <div class="card-body">
+          <div class="row mb-3">
+            <div class="col-md-3"><strong>Description:</strong></div>
+            <div class="col-md-9">{{ rule.description or "Aucune description" }}</div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-3"><strong>Technologies:</strong></div>
+            <div class="col-md-9">
+              {% if rule.technologies %}
+                {% for tech in rule.technologies %}
+                  <span class="badge bg-primary me-1">{{ tech }}</span>
+                {% endfor %}
+              {% else %}
+                <em>Aucune technologie spécifiée</em>
+              {% endif %}
+            </div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-3"><strong>Rôles:</strong></div>
+            <div class="col-md-9">
+              {% if rule.roles %}
+                {% for role in rule.roles %}
+                  <span class="badge bg-secondary me-1">{{ role }}</span>
+                {% endfor %}
+              {% else %}
+                <em>Aucun rôle spécifié</em>
+              {% endif %}
+            </div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-3"><strong>Créé le:</strong></div>
+            <div class="col-md-9">{{ rule.created_at.strftime('%d/%m/%Y à %H:%M') if rule.created_at else "Date inconnue" }}</div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-3"><strong>Propriétaire:</strong></div>
+            <div class="col-md-9">{{ rule.owner or "Système" }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-header">
+          <h6 class="card-title mb-0">Actions</h6>
+        </div>
+        <div class="card-body">
+          <div class="d-grid gap-2">
+            <a href="{{ url_for('edit_rule', rule_id=rule.id) }}" class="btn btn-warning">
+              <i class="bi bi-pencil"></i> Modifier le Contenu
+            </a>
+            <a href="{{ url_for('download_rule', rule_id=rule.id) }}" class="btn btn-info">
+              <i class="bi bi-download"></i> Télécharger
+            </a>
+            {% if rule.owner == session.get('user_id') or session.get('is_admin') %}
+            <form method="POST" action="{{ url_for('delete_rule', rule_id=rule.id) }}"
+                  onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette règle ?');">
+              <button type="submit" class="btn btn-danger w-100">
+                <i class="bi bi-trash"></i> Supprimer
+              </button>
+            </form>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rule Content Preview -->
+  <div class="mt-4">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="card-title mb-0">Contenu de la Règle</h5>
+      </div>
+      <div class="card-body">
+        <pre class="bg-light p-3 rounded"><code>{{ rule.content or "Contenu non disponible" }}</code></pre>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} 

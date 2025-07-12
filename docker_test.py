@@ -3,9 +3,11 @@
 Test script to verify Docker containers are working
 """
 
-import requests
-import time
 import sys
+import time
+
+import requests
+
 
 def test_api():
     """Test the API server"""
@@ -18,6 +20,7 @@ def test_api():
         print(f"❌ API Server (port 5000): {e}")
         return False
 
+
 def test_frontend():
     """Test the frontend server"""
     try:
@@ -29,17 +32,18 @@ def test_frontend():
         print(f"❌ Frontend Server (port 3000): {e}")
         return False
 
+
 def main():
     print("Testing Confusys Docker containers...")
     print("=" * 40)
-    
+
     # Wait a bit for containers to start
     print("Waiting for containers to start...")
     time.sleep(10)
-    
+
     api_ok = test_api()
     frontend_ok = test_frontend()
-    
+
     print("=" * 40)
     if api_ok and frontend_ok:
         print("🎉 All containers are running!")
@@ -52,5 +56,6 @@ def main():
         print("❌ Some containers failed to start")
         sys.exit(1)
 
+
 if __name__ == "__main__":
-    main() 
+    main()
