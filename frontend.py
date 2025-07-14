@@ -58,9 +58,6 @@ def home():
     return redirect(url_for("login"))
 
 
-
-
-
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -286,7 +283,6 @@ def download_script(machine_id):
     else:
         flash("Erreur lors du téléchargement du script.", "danger")
         return redirect(url_for("view_machine", machine_id=machine_id))
-
 
 
 @app.route("/rules")
