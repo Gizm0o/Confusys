@@ -1,3 +1,4 @@
+import os
 from io import BytesIO
 
 import jwt
@@ -18,11 +19,8 @@ from werkzeug.utils import secure_filename
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 app.config["SECRET_KEY"] = "frontend-secret-key"
-app.config["API_URL"] = "http://api:5000"
 
 # API URL configuration
-import os
-
 API_BASE_URL = os.environ.get("API_URL", "http://api:5000")
 
 
@@ -54,45 +52,10 @@ def login_required(f):
 # Make helper functions available to templates
 app.jinja_env.globals.update(is_admin=is_admin, has_role=has_role)
 
-# Configure Flask app for static files
-app.static_folder = "static"
-app.static_url_path = "/static"
-
 
 @app.route("/")
 def home():
     return redirect(url_for("login"))
-
-
-@app.route("/register", methods=["GET", "POST"])
-def register():
-    if request.method == "POST":
-        username = request.form.get("username")
-        email = request.form.get("email")
-        password = request.form.get("password")
-        confirm_password = request.form.get("confirm_password")
-
-        if not username or not email or not password:
-            flash("Tous les champs sont requis.", "danger")
-            return redirect(url_for("register"))
-
-        if password != confirm_password:
-            flash("Les mots de passe ne correspondent pas.", "danger")
-            return redirect(url_for("register"))
-
-        response = requests.post(
-            f"{API_BASE_URL}/user/register",
-            json={"username": username, "email": email, "password": password},
-        )
-
-        if response.status_code == 201:
-            flash("Inscription réussie. Connectez-vous !", "success")
-            return redirect(url_for("login"))
-        else:
-            flash("Erreur lors de l'inscription.", "danger")
-            return redirect(url_for("register"))
-
-    return render_template("register.html")
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -340,6 +303,112 @@ def rules():
     return render_template("rules.html", roles=roles, rules=rules)
 
 
+@app.route("/rules/view")
+@login_required
+def view_rules():
+    token = session.get("token")
+    headers = {"Authorization": f"Bearer {token}"}
+    try:
+        rules_resp = requests.get(f"{API_BASE_URL}/rules", headers=headers)
+        rules = rules_resp.json() if rules_resp.ok else []
+    except Exception:
+        flash("Erreur lors de la récupération des règles.", "danger")
+        return redirect(url_for("dashboard"))
+
+    return render_template("view_rules.html", rules=rules)
+
+
+@app.route("/rules/<rule_id>")
+@login_required
+def view_rule_detail(rule_id):
+    token = session.get("token")
+    headers = {"Authorization": f"Bearer {token}"}
+    try:
+        rule_resp = requests.get(f"{API_BASE_URL}/rules/{rule_id}", headers=headers)
+        if rule_resp.status_code == 200:
+            rule = rule_resp.json()
+            # Parse created_at if it exists
+            if rule.get("created_at"):
+                from datetime import datetime
+
+                try:
+                    rule["created_at"] = datetime.fromisoformat(
+                        rule["created_at"].replace("Z", "+00:00")
+                    )
+                except:
+                    rule["created_at"] = None
+            return render_template("rule_detail.html", rule=rule)
+        else:
+            flash("Règle non trouvée ou accès refusé.", "danger")
+            return redirect(url_for("view_rules"))
+    except Exception:
+        flash("Erreur lors de la récupération de la règle.", "danger")
+        return redirect(url_for("view_rules"))
+
+
+@app.route("/rules/<rule_id>/edit", methods=["GET", "POST"])
+@login_required
+def edit_rule(rule_id):
+    token = session.get("token")
+    headers = {"Authorization": f"Bearer {token}"}
+
+    if request.method == "GET":
+        try:
+            rule_resp = requests.get(f"{API_BASE_URL}/rules/{rule_id}", headers=headers)
+            roles_resp = requests.get(f"{API_BASE_URL}/roles", headers=headers)
+
+            if rule_resp.status_code == 200:
+                rule = rule_resp.json()
+                # Parse created_at if it exists
+                if rule.get("created_at"):
+                    from datetime import datetime
+
+                    try:
+                        rule["created_at"] = datetime.fromisoformat(
+                            rule["created_at"].replace("Z", "+00:00")
+                        )
+                    except:
+                        rule["created_at"] = None
+                roles = roles_resp.json() if roles_resp.ok else []
+                return render_template("edit_rule.html", rule=rule, roles=roles)
+            else:
+                flash("Règle non trouvée ou accès refusé.", "danger")
+                return redirect(url_for("view_rules"))
+        except Exception:
+            flash("Erreur lors de la récupération de la règle.", "danger")
+            return redirect(url_for("view_rules"))
+
+    # POST - Update rule
+    try:
+        description = request.form.get("description")
+        content = request.form.get("content")
+        roles = request.form.getlist("roles")
+        technologies = request.form.getlist("technologies")
+
+        data = {"description": description}
+        if content:
+            data["content"] = content
+        if roles:
+            data["roles"] = roles
+        if technologies:
+            data["technologies"] = technologies
+
+        resp = requests.put(
+            f"{API_BASE_URL}/rules/{rule_id}", headers=headers, data=data
+        )
+
+        if resp.status_code == 200:
+            flash("Règle mise à jour avec succès.", "success")
+            return redirect(url_for("view_rule_detail", rule_id=rule_id))
+        else:
+            flash("Erreur lors de la mise à jour de la règle.", "danger")
+            return redirect(url_for("edit_rule", rule_id=rule_id))
+
+    except Exception:
+        flash("Erreur de connexion.", "danger")
+        return redirect(url_for("edit_rule", rule_id=rule_id))
+
+
 @app.route("/rules/upload", methods=["POST"])
 @login_required
 def upload_rules():
@@ -372,6 +441,9 @@ def upload_rules():
         data = {"description": description}
         if roles:
             data["roles"] = roles
+        technologies = request.form.getlist("technologies")
+        if technologies:
+            data["technologies"] = technologies
 
         resp = requests.post(
             f"{API_BASE_URL}/rules", headers=headers, files=files, data=data
@@ -394,8 +466,6 @@ def upload_rules():
 @login_required
 def validate_rules():
     token = session.get("token")
-    if not token:
-        return {"valid": False, "errors": ["Non autorisé"]}, 401
 
     try:
         content = request.form.get("content", "")
@@ -433,13 +503,6 @@ def validate_rules():
                     "severity",
                     "category",
                 ]
-                required_fields = [
-                    "id",
-                    "description",
-                    "search",
-                    "severity",
-                    "category",
-                ]
                 for field in required_fields:
                     if field not in rule:
                         errors.append(f"Règle {i+1}: champ '{field}' requis")
@@ -448,10 +511,6 @@ def validate_rules():
                 if "severity" in rule:
                     valid_severities = ["Critical", "High", "Medium", "Low"]
                     if rule["severity"] not in valid_severities:
-                        errors.append(
-                            f"Règle {i+1}: sévérité invalide. Valeurs autorisées: {', '.join(valid_severities)}"
-                        )
-
                         errors.append(
                             f"Règle {i+1}: sévérité invalide. Valeurs autorisées: {', '.join(valid_severities)}"
                         )
@@ -494,13 +553,14 @@ def save_rules():
         # Create a temporary file for upload
         file_data = BytesIO(content.encode("utf-8"))
 
-        file_data = BytesIO(content.encode("utf-8"))
-
         # Prepare form data for API
         files = {"file": ("custom_rules.yml", file_data, "application/x-yaml")}
         data = {"description": description}
         if roles:
             data["roles"] = roles
+        technologies = request.form.getlist("technologies")
+        if technologies:
+            data["technologies"] = technologies
 
         resp = requests.post(
             f"{API_BASE_URL}/rules", headers=headers, files=files, data=data
@@ -510,11 +570,6 @@ def save_rules():
             return {"success": True}
         else:
             error_data = resp.json() if resp.content else {}
-            return {
-                "success": False,
-                "error": error_data.get("error", "Erreur lors de la sauvegarde"),
-            }
-
             return {
                 "success": False,
                 "error": error_data.get("error", "Erreur lors de la sauvegarde"),
@@ -535,17 +590,10 @@ def download_rule(rule_id):
             f"{API_BASE_URL}/rules/{rule_id}?download=1", headers=headers
         )
 
-        resp = requests.get(
-            f"{API_BASE_URL}/rules/{rule_id}?download=1", headers=headers
-        )
-
         if resp.status_code == 200:
             return Response(
                 resp.content,
                 mimetype="application/x-yaml",
-                headers={
-                    "Content-Disposition": f"attachment; filename=rule_{rule_id}.yml"
-                },
                 headers={
                     "Content-Disposition": f"attachment; filename=rule_{rule_id}.yml"
                 },
@@ -564,23 +612,376 @@ def download_rule(rule_id):
 def delete_rule(rule_id):
     token = session.get("token")
     headers = {"Authorization": f"Bearer {token}"}
-
     try:
         resp = requests.delete(f"{API_BASE_URL}/rules/{rule_id}", headers=headers)
+        if resp.status_code == 200:
+            flash("Règle supprimée.", "success")
+        else:
+            flash("Échec de la suppression.", "danger")
+    except Exception:
+        flash("Erreur de connexion à l'API.", "danger")
+
+    return redirect(url_for("view_rules"))
+
+
+# User Management Routes (Admin Only)
+@app.route("/admin/users")
+@login_required
+def admin_users():
+    # Check if user is admin
+    if not is_admin():
+        flash(
+            "Accès refusé. Seuls les administrateurs peuvent accéder à cette page.",
+            "danger",
+        )
+        return redirect(url_for("dashboard"))
+
+    token = session.get("token")
+    headers = {"Authorization": f"Bearer {token}"}
+    try:
+        users_resp = requests.get(f"{API_BASE_URL}/user/users", headers=headers)
+        roles_resp = requests.get(f"{API_BASE_URL}/user/roles", headers=headers)
+
+        if users_resp.status_code == 200 and roles_resp.status_code == 200:
+            users = users_resp.json()
+            roles = roles_resp.json()
+            return render_template("admin_users.html", users=users, roles=roles)
+        else:
+            flash(
+                "Accès refusé. Seuls les administrateurs peuvent accéder à cette page.",
+                "danger",
+            )
+            return redirect(url_for("dashboard"))
+    except Exception:
+        flash("Erreur lors de la récupération des données.", "danger")
+        return redirect(url_for("dashboard"))
+
+
+@app.route("/admin/users/create", methods=["GET", "POST"])
+@login_required
+def create_user():
+    # Check if user is admin
+    if not is_admin():
+        flash(
+            "Accès refusé. Seuls les administrateurs peuvent accéder à cette page.",
+            "danger",
+        )
+        return redirect(url_for("dashboard"))
+
+    token = session.get("token")
+    headers = {"Authorization": f"Bearer {token}"}
+
+    if request.method == "GET":
+        try:
+            roles_resp = requests.get(f"{API_BASE_URL}/user/roles", headers=headers)
+            if roles_resp.status_code == 200:
+                roles = roles_resp.json()
+                return render_template("create_user.html", roles=roles)
+            else:
+                flash("Accès refusé.", "danger")
+                return redirect(url_for("admin_users"))
+        except Exception:
+            flash("Erreur lors de la récupération des rôles.", "danger")
+            return redirect(url_for("admin_users"))
+
+    # POST - Create user
+    try:
+        username = request.form.get("username")
+        email = request.form.get("email")
+        password = request.form.get("password")
+        confirm_password = request.form.get("confirm_password")
+        selected_roles = request.form.getlist("roles")
+
+        if not username or not password:
+            flash("Le nom d'utilisateur et le mot de passe sont requis.", "danger")
+            return redirect(url_for("create_user"))
+
+        if password != confirm_password:
+            flash("Les mots de passe ne correspondent pas.", "danger")
+            return redirect(url_for("create_user"))
+
+        data = {"username": username, "password": password, "roles": selected_roles}
+
+        # Only include email if it's provided
+        if email:
+            data["email"] = email
+
+        resp = requests.post(f"{API_BASE_URL}/user/users", headers=headers, json=data)
+
+        if resp.status_code == 201:
+            flash("Utilisateur créé avec succès.", "success")
+            return redirect(url_for("admin_users"))
+        else:
+            error_data = resp.json() if resp.content else {}
+            flash(
+                f"Erreur: {error_data.get('error', 'Erreur lors de la création')}",
+                "danger",
+            )
+            return redirect(url_for("create_user"))
+
+    except Exception:
+        flash("Erreur de connexion.", "danger")
+        return redirect(url_for("create_user"))
+
+
+@app.route("/admin/users/<user_id>/edit", methods=["GET", "POST"])
+@login_required
+def edit_user(user_id):
+    # Check if user is admin
+    if not is_admin():
+        flash(
+            "Accès refusé. Seuls les administrateurs peuvent accéder à cette page.",
+            "danger",
+        )
+        return redirect(url_for("dashboard"))
+
+    token = session.get("token")
+    headers = {"Authorization": f"Bearer {token}"}
+
+    if request.method == "GET":
+        try:
+            user_resp = requests.get(
+                f"{API_BASE_URL}/user/users/{user_id}", headers=headers
+            )
+            roles_resp = requests.get(f"{API_BASE_URL}/user/roles", headers=headers)
+
+            if user_resp.status_code == 200 and roles_resp.status_code == 200:
+                user = user_resp.json()
+                roles = roles_resp.json()
+                return render_template("edit_user.html", user=user, roles=roles)
+            else:
+                flash("Utilisateur non trouvé ou accès refusé.", "danger")
+                return redirect(url_for("admin_users"))
+        except Exception:
+            flash("Erreur lors de la récupération de l'utilisateur.", "danger")
+            return redirect(url_for("admin_users"))
+
+    # POST - Update user
+    try:
+        username = request.form.get("username")
+        email = request.form.get("email")
+        password = request.form.get("password")
+        selected_roles = request.form.getlist("roles")
+
+        data = {"username": username, "roles": selected_roles}
+
+        # Only include email if it's provided
+        if email:
+            data["email"] = email
+
+        if password:
+            data["password"] = password
+
+        resp = requests.put(
+            f"{API_BASE_URL}/user/users/{user_id}", headers=headers, json=data
+        )
+
+        if resp.status_code == 200:
+            flash("Utilisateur mis à jour avec succès.", "success")
+            return redirect(url_for("admin_users"))
+        else:
+            error_data = resp.json() if resp.content else {}
+            flash(
+                f"Erreur: {error_data.get('error', 'Erreur lors de la mise à jour')}",
+                "danger",
+            )
+            return redirect(url_for("edit_user", user_id=user_id))
+
+    except Exception:
+        flash("Erreur de connexion.", "danger")
+        return redirect(url_for("edit_user", user_id=user_id))
+
+
+@app.route("/admin/users/<user_id>/delete", methods=["POST"])
+@login_required
+def delete_user(user_id):
+    # Check if user is admin
+    if not is_admin():
+        flash(
+            "Accès refusé. Seuls les administrateurs peuvent accéder à cette page.",
+            "danger",
+        )
+        return redirect(url_for("dashboard"))
+
+    token = session.get("token")
+    headers = {"Authorization": f"Bearer {token}"}
+    try:
+        resp = requests.delete(f"{API_BASE_URL}/user/users/{user_id}", headers=headers)
+        if resp.status_code == 200:
+            flash("Utilisateur supprimé.", "success")
+        else:
+            error_data = resp.json() if resp.content else {}
+            flash(
+                f"Erreur: {error_data.get('error', 'Échec de la suppression')}",
+                "danger",
+            )
+    except Exception:
+        flash("Erreur de connexion à l'API.", "danger")
+
+    return redirect(url_for("admin_users"))
+
+
+@app.route("/admin/roles")
+@login_required
+def admin_roles():
+    # Check if user is admin
+    if not is_admin():
+        flash(
+            "Accès refusé. Seuls les administrateurs peuvent accéder à cette page.",
+            "danger",
+        )
+        return redirect(url_for("dashboard"))
+
+    token = session.get("token")
+    headers = {"Authorization": f"Bearer {token}"}
+    try:
+        roles_resp = requests.get(f"{API_BASE_URL}/user/roles", headers=headers)
+
+        if roles_resp.status_code == 200:
+            roles = roles_resp.json()
+            return render_template("admin_roles.html", roles=roles)
+        else:
+            flash(
+                "Accès refusé. Seuls les administrateurs peuvent accéder à cette page.",
+                "danger",
+            )
+            return redirect(url_for("dashboard"))
+    except Exception:
+        flash("Erreur lors de la récupération des données.", "danger")
+        return redirect(url_for("dashboard"))
+
+
+@app.route("/admin/roles/create", methods=["GET", "POST"])
+@login_required
+def create_role():
+    # Check if user is admin
+    if not is_admin():
+        flash(
+            "Accès refusé. Seuls les administrateurs peuvent accéder à cette page.",
+            "danger",
+        )
+        return redirect(url_for("dashboard"))
+
+    token = session.get("token")
+    headers = {"Authorization": f"Bearer {token}"}
+
+    if request.method == "GET":
+        return render_template("create_role.html")
+
+    # POST - Create role
+    try:
+        name = request.form.get("name")
+        description = request.form.get("description", "")
+
+        if not name:
+            flash("Le nom du rôle est requis.", "danger")
+            return redirect(url_for("create_role"))
+
+        data = {"name": name, "description": description}
+
+        resp = requests.post(f"{API_BASE_URL}/user/roles", headers=headers, json=data)
+
+        if resp.status_code == 201:
+            flash("Rôle créé avec succès.", "success")
+            return redirect(url_for("admin_roles"))
+        else:
+            error_data = resp.json() if resp.content else {}
+            flash(
+                f"Erreur: {error_data.get('error', 'Erreur lors de la création')}",
+                "danger",
+            )
+            return redirect(url_for("create_role"))
+
+    except Exception:
+        flash("Erreur de connexion.", "danger")
+        return redirect(url_for("create_role"))
+
+
+@app.route("/admin/roles/<role_id>/edit", methods=["GET", "POST"])
+@login_required
+def edit_role(role_id):
+    # Check if user is admin
+    if not is_admin():
+        flash(
+            "Accès refusé. Seuls les administrateurs peuvent accéder à cette page.",
+            "danger",
+        )
+        return redirect(url_for("dashboard"))
+
+    token = session.get("token")
+    headers = {"Authorization": f"Bearer {token}"}
+
+    if request.method == "GET":
+        try:
+            role_resp = requests.get(
+                f"{API_BASE_URL}/user/roles/{role_id}", headers=headers
+            )
+
+            if role_resp.status_code == 200:
+                role = role_resp.json()
+                return render_template("edit_role.html", role=role)
+            else:
+                flash("Rôle non trouvé ou accès refusé.", "danger")
+                return redirect(url_for("admin_roles"))
+        except Exception:
+            flash("Erreur lors de la récupération du rôle.", "danger")
+            return redirect(url_for("admin_roles"))
+
+    # POST - Update role
+    try:
+        name = request.form.get("name")
+        description = request.form.get("description", "")
+
+        data = {"name": name, "description": description}
+
+        resp = requests.put(
+            f"{API_BASE_URL}/user/roles/{role_id}", headers=headers, json=data
+        )
 
         if resp.status_code == 200:
             flash("Rôle mis à jour avec succès.", "success")
             return redirect(url_for("admin_roles"))
         else:
-            flash("Erreur lors de la suppression", "danger")
+            error_data = resp.json() if resp.content else {}
+            flash(
+                f"Erreur: {error_data.get('error', 'Erreur lors de la mise à jour')}",
+                "danger",
+            )
+            return redirect(url_for("edit_role", role_id=role_id))
 
     except Exception:
-        flash("Erreur de connexion", "danger")
+        flash("Erreur de connexion.", "danger")
+        return redirect(url_for("edit_role", role_id=role_id))
 
-    return redirect(url_for("rules"))
+
+@app.route("/admin/roles/<role_id>/delete", methods=["POST"])
+@login_required
+def delete_role(role_id):
+    # Check if user is admin
+    if not is_admin():
+        flash(
+            "Accès refusé. Seuls les administrateurs peuvent accéder à cette page.",
+            "danger",
+        )
+        return redirect(url_for("dashboard"))
+
+    token = session.get("token")
+    headers = {"Authorization": f"Bearer {token}"}
+    try:
+        resp = requests.delete(f"{API_BASE_URL}/user/roles/{role_id}", headers=headers)
+        if resp.status_code == 200:
+            flash("Rôle supprimé.", "success")
+        else:
+            error_data = resp.json() if resp.content else {}
+            flash(
+                f"Erreur: {error_data.get('error', 'Échec de la suppression')}",
+                "danger",
+            )
+    except Exception:
+        flash("Erreur de connexion à l'API.", "danger")
+
+    return redirect(url_for("admin_roles"))
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=3000, host="0.0.0.0")
-
     app.run(debug=True, port=3000, host="0.0.0.0")

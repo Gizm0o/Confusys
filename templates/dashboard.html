@@ -62,10 +62,10 @@
         <tr>
           <th class="text-truncate" style="max-width: 70px;">ID</th>
           <th class="text-truncate" style="max-width: 70px;">Nom</th>
-          <th class="text-truncate" style="max-width: 70px;" data-bs-toggle="tooltip" title="Description">Description</th>
+          <th class="text-truncate" style="max-width: 120px;" data-bs-toggle="tooltip" title="Description">Description</th>
           <th class="text-truncate" style="max-width: 100px;">Rôles</th>
           <th class="text-truncate" style="max-width: 140px;">Technologies</th>
-          <th class="text-truncate" style="max-width: 120px;">Audit</th>
+          <th class="text-truncate" style="max-width: 200px;">Audit</th>
           <th style="min-width: 150px;">Actions</th>
         </tr>
       </thead>
@@ -74,7 +74,7 @@
         <tr>
           <td class="text-truncate" style="max-width: 70px;" data-bs-toggle="tooltip" title="{{ m.id }}">{{ m.id }}</td>
           <td class="text-truncate" style="max-width: 100px;">{{ m.name }}</td>
-          <td class="text-truncate" style="max-width: 70px;" data-bs-toggle="tooltip" title="{{ m.description }}">{{ m.description }}</td>
+          <td class="text-truncate" style="max-width: 100px;" data-bs-toggle="tooltip" title="{{ m.description }}">{{ m.description }}</td>
           <td class="text-truncate" style="max-width: 100px;">
             {% if m.roles %}{{ m.roles | join(", ") }}{% else %}<em>Aucun</em>{% endif %}
           </td>
@@ -87,7 +87,7 @@
               <em>Aucune</em>
             {% endif %}
           </td>
-          <td class="text-truncate" style="max-width: 140px;" data-bs-toggle="tooltip" title ="Nombre de finding : {{ m.total_findings }}">
+          <td class="text-truncate" style="max-width: 200px;" data-bs-toggle="tooltip" title ="Nombre de finding : {{ m.total_findings }}">
             {% if m.has_findings %}
               <span class="badge bg-danger">
                 Audit avec problèmes – {{ m.total_findings }} finding{{ 's' if m.total_findings > 1 else '' }}
