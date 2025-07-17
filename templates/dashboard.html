@@ -9,9 +9,9 @@
   <div class="row align-items-center">
     <!-- Colonne du score -->
     <div class="col-lg-4 col-md-6 mb-4">
-      <div class="card text-center shadow-sm p-3">
+      <div class="card text-center shadow-sm p-3 score-card">
         <h5 class="card-title">Score global de sécurité</h5>
-        <canvas id="globalScoreChart" class="w-100" style="max-height: 200px; max-width: 300px;"></canvas>
+        <canvas id="globalScoreChart"></canvas>
         <div class="mt-2">
           <span class="badge text-white fw-bold px-3 py-2" style="background-color: '{{ 'green' if global_score >= 80 else 'orange' if global_score >= 50 else 'red' }}';">
             {{ global_score }}%
@@ -54,31 +54,48 @@
       {% endwith %}
     </div>
   </div>
+  <div class="d-flex justify-content-end mb-3">
+    <div class="dropdown">
+      <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="bi bi-funnel"></i> Colonnes à afficher
+      </button>
+      <ul class="dropdown-menu p-3" style="min-width: 250px;">
+        {% for col in ['ID', 'Nom', 'Description', 'Rôles', 'Technologies', 'Audit', 'Actions'] %}
+        <li>
+          <div class="form-check">
+            <input class="form-check-input column-toggle" type="checkbox" id="toggle-{{ col | lower }}" data-column="{{ loop.index0 }}" checked>
+            <label class="form-check-label" for="toggle-{{ col | lower }}">{{ col }}</label>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
 
   {% if machines %}
   <div class="table-responsive">
-    <table class="table table-striped table-hover align-middle w-100">
+    <table class="table table-striped table-hover align-middle w-100 dashboard-table">
       <thead class="table-dark">
         <tr>
-          <th class="text-truncate" style="max-width: 70px;">ID</th>
-          <th class="text-truncate" style="max-width: 70px;">Nom</th>
-          <th class="text-truncate" style="max-width: 120px;" data-bs-toggle="tooltip" title="Description">Description</th>
-          <th class="text-truncate" style="max-width: 100px;">Rôles</th>
-          <th class="text-truncate" style="max-width: 140px;">Technologies</th>
-          <th class="text-truncate" style="max-width: 200px;">Audit</th>
-          <th style="min-width: 150px;">Actions</th>
+          <th>ID</th>
+          <th>Nom</th>
+          <th>Description</th>
+          <th>Rôles</th>
+          <th>Technologies</th>
+          <th>Audit</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         {% for m in machines %}
         <tr>
-          <td class="text-truncate" style="max-width: 70px;" data-bs-toggle="tooltip" title="{{ m.id }}">{{ m.id }}</td>
-          <td class="text-truncate" style="max-width: 100px;">{{ m.name }}</td>
-          <td class="text-truncate" style="max-width: 100px;" data-bs-toggle="tooltip" title="{{ m.description }}">{{ m.description }}</td>
-          <td class="text-truncate" style="max-width: 100px;">
+          <td class="text-truncate" data-bs-toggle="tooltip" title="{{ m.id }}">{{ m.id }}</td>
+          <td class="text-truncate">{{ m.name }}</td>
+          <td class="text-truncate" data-bs-toggle="tooltip" title="{{ m.description }}">{{ m.description }}</td>
+          <td class="text-truncate">
             {% if m.roles %}{{ m.roles | join(", ") }}{% else %}<em>Aucun</em>{% endif %}
           </td>
-          <td class="text-truncate" style="max-width: 140px;" data-bs-toggle="tooltip" title="{{ m.technologies | join(', ') }}">
+          <td class="text-truncate" data-bs-toggle="tooltip" title="{{ m.technologies | join(', ') }}">
             {% if m.technologies|length > 3 %}
               {{ m.technologies|length }} technos choisies
             {% elif m.technologies %}
@@ -87,7 +104,7 @@
               <em>Aucune</em>
             {% endif %}
           </td>
-          <td class="text-truncate" style="max-width: 200px;" data-bs-toggle="tooltip" title ="Nombre de finding : {{ m.total_findings }}">
+          <td class="text-truncate" data-bs-toggle="tooltip" title ="Nombre de finding : {{ m.total_findings }}">
             {% if m.has_findings %}
               <span class="badge bg-danger">
                 Audit avec problèmes – {{ m.total_findings }} finding{{ 's' if m.total_findings > 1 else '' }}
@@ -114,8 +131,9 @@
     </div>
   {% endif %}
 
-  <script>
+<script>
   document.addEventListener("DOMContentLoaded", function () {
+    // Chart
     const ctx = document.getElementById("globalScoreChart").getContext("2d");
     const score = parseInt("{{ global_score }}");
     const color = score >= 80 ? "#28a745" : score >= 50 ? "#ffc107" : "#dc3545";
@@ -131,7 +149,7 @@
       },
       options: {
         responsive: true,
-        maintainAspectRatio: false,  // facultatif pour plus de contrôle
+        maintainAspectRatio: false,
         rotation: -90,
         circumference: 180,
         cutout: "70%",
@@ -143,23 +161,41 @@
       plugins: [{
         id: 'center-text',
         beforeDraw(chart) {
-          const { width } = chart;
+          const { width, height } = chart;
           const ctx = chart.ctx;
           ctx.save();
-          ctx.font = "bold 16px sans-serif";
+          ctx.font = "bold 20px sans-serif";
           ctx.fillStyle = color;
           ctx.textAlign = "center";
-          ctx.fillText(score + "%", width / 2, chart._metasets[0].data[0].y + 10);
+          ctx.textBaseline = "middle";
+          ctx.fillText(score + "%", width / 2, height / 1.35);
+          ctx.restore();
         }
       }]
     });
 
-    // Init Bootstrap tooltips
+    // Tooltips
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     tooltipTriggerList.forEach(function (tooltipTriggerEl) {
       new bootstrap.Tooltip(tooltipTriggerEl);
     });
+
+    // Gérer l'affichage des colonnes
+    document.querySelectorAll('.column-toggle').forEach((checkbox) => {
+      checkbox.addEventListener('change', function () {
+        const colIndex = parseInt(this.dataset.column);
+        const isChecked = this.checked;
+
+        document.querySelectorAll('table.dashboard-table tr').forEach(row => {
+          const cells = row.querySelectorAll('th, td');
+          if (cells[colIndex]) {
+            cells[colIndex].style.display = isChecked ? '' : 'none';
+          }
+        });
+      });
+    });
   });
   </script>
+
 </div>
 {% endblock %}
