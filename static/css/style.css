@@ -31,3 +31,70 @@ body {
     border-color: #007bff;
     box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
 } 
+
+/* Table styles */
+.table-responsive table {
+  width: 100% !important;
+  table-layout: fixed;
+}
+
+.dashboard-table th,
+.dashboard-table td {
+  min-width: 120px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+  transition: all 0.2s ease-in-out;
+}
+
+.dashboard-table .actions {
+  min-width: 180px;
+}
+
+.dropdown-menu {
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+  border-radius: 0.5rem;
+}
+
+.form-check-input:checked {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}
+
+
+/* Truncation for content */
+.table td.text-truncate {
+  max-width: 200px;
+}
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+  .dashboard-table td,
+  .dashboard-table th {
+    white-space: normal;
+    max-width: 100%;
+  }
+
+  .dashboard-table .actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+
+/* Score chart container */
+.score-card canvas {
+  max-height: 200px;
+  margin: 0 auto;
+  display: block;
+}
+
+@media (min-width: 992px) {
+  .score-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+}
