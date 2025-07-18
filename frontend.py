@@ -57,6 +57,11 @@ app.jinja_env.globals.update(is_admin=is_admin, has_role=has_role)
 def home():
     return redirect(url_for("login"))
 
+@app.route("/api/documentation")
+def documentation_url():
+    """Get Swagger documentation URL"""
+    return render_template("swagger.html", api_url=f"{API_BASE_URL}/swagger")
+
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
