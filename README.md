@@ -501,3 +501,13 @@ pytest tests/
 - Only admin users can manage roles and assign them to users/machines.
 - Users can only access machines if they share at least one role with the machine, unless they are admin.
 - All endpoints require JWT authentication except registration and login.
+Docum
+## Database File
+
+- The SQLite database file `confusys.db` is generated automatically in the `instance/` directory for local development.
+- This file should not be versioned or committed to the repository. It is ignored in Docker and can be safely deleted to reset the database state.
+- To reset your database, simply delete `instance/confusys.db` and restart the application.
+
+## Configuration Files
+
+- The `.flake8` file is used for linting configuration. The old `setup.cfg` is no longer needed and has been removed.

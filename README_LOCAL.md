@@ -57,10 +57,11 @@ After starting the servers, you can log in with the default admin account:
 - The default admin user is created automatically
 - If login fails, restart the API server to recreate the database
 
-### Database Issues
-- The app uses SQLite for local development
-- Database file: `confusys.db` (created automatically)
-- To reset: delete `confusys.db` and restart
+## Database File
+
+- The SQLite database file `confusys.db` is generated automatically in the `instance/` directory for local development.
+- This file should not be versioned or committed to the repository. It is ignored in Docker and can be safely deleted to reset the database state.
+- To reset your database, simply delete `instance/confusys.db` and restart the application.
 
 ## Development Notes
 

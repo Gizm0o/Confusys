@@ -88,3 +88,9 @@ If you get "port already in use" errors:
 
 ### CORS Issues
 If you encounter CORS issues, the frontend is configured to handle them automatically. 
+
+## Database File
+
+- The SQLite database file `confusys.db` is generated automatically in the `instance/` directory for local development.
+- This file should not be versioned or committed to the repository. It is ignored in Docker and can be safely deleted to reset the database state.
+- To reset your database, simply delete `instance/confusys.db` and restart the application. 
